@@ -69,7 +69,7 @@ if (count.c === 0) {
   ];
   const today = new Date().toISOString().slice(0, 10);
   const ids = demoMembers.map(m => {
-    insertMember.run(...m);
+    insertMember.run(m);
     return db.prepare('SELECT last_insert_rowid() as id').get().id;
   });
 
