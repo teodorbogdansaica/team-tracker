@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --surface2: #22263a; --border: #2e3249;
+      --text: #e2e8f0; --text-dim: #8892a4; --accent: #4F86C6; --radius: 10px;
+    }
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+
+    header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header h1 span { color: var(--accent); }
+    .header-right { display: flex; align-items: center; gap: 14px; }
+    .header-time { font-size: 0.8rem; color: var(--text-dim); }
+    .user-chip { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; color: var(--text-dim); }
+    .user-chip strong { color: var(--text); }
+
+    .tabs { display: flex; gap: 4px; padding: 16px 32px 0; border-bottom: 1px solid var(--border); background: var(--surface); }
+    .tab { padding: 8px 18px; border: none; background: none; color: var(--text-dim); cursor: pointer; font-size: 0.9rem; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .main { padding: 28px 32px; }
+    .page { display: none; } .page.active { display: block; }
+
+    .legend { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    .calendar-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .calendar-nav h2 { font-size: 1.1rem; font-weight: 600; min-width: 180px; }
+    .btn-nav { background: var(--surface2); border: 1px solid var(--border); color: var(--text); width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
+    .btn-nav:hover { background: var(--border); }
+
+    .calendar-grid { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead th { background: var(--surface2); padding: 10px 8px; font-size: 0.75rem; font-weight: 500; color: var(--text-dim); text-align: center; border: 1px solid var(--border); }
+    thead th.today-col { color: var(--accent); }
+    tbody td { border: 1px solid var(--border); padding: 0; height: 40px; text-align: center; vertical-align: middle; }
+    .member-cell { padding: 8px 12px; text-align: left; white-space: nowrap; background: var(--surface); position: sticky; left: 0; z-index: 1; min-width: 160px; }
+    .member-info { display: flex; align-items: center; gap: 8px; }
+    .avatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0; }
+    .member-name { font-size: 0.82rem; font-weight: 500; }
+    .member-role { font-size: 0.7rem; color: var(--text-dim); }
+    .day-cell { cursor: pointer; transition: filter .1s; }
+    .day-cell:hover { filter: brightness(1.3); }
+    .day-cell.weekend { background: rgba(255,255,255,0.02); }
+    .day-cell.today-col { background: rgba(79,134,198,0.07); }
+    .entry-dot { width: 26px; height: 26px; border-radius: 6px; margin: auto; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; }
+    .entry-vacation { background: rgba(79,134,198,0.25); color: #7ab3e8; }
+    .entry-sick     { background: rgba(229,107,111,0.25); color: #f09497; }
+    .entry-time_off { background: rgba(232,184,75,0.25);  color: #f0cc7a; }
+    .entry-holiday  { background: rgba(107,191,106,0.25); color: #90d48f; }
+
+    .team-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .team-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+    .member-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .card-header-left { display: flex; align-items: center; gap: 12px; }
+    .card-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: #fff; }
+    .card-name { font-size: 0.95rem; font-weight: 600; }
+    .card-role { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+    .card-info { display: flex; flex-direction: column; gap: 8px; }
+    .card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; }
+    .card-label { color: var(--text-dim); }
+    .local-time { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .status-badge { padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
+    .status-working  { background: rgba(107,191,106,0.2); color: #90d48f; }
+    .status-off      { background: rgba(136,146,164,0.2); color: #8892a4; }
+    .status-vacation { background: rgba(79,134,198,0.2);  color: #7ab3e8; }
+    .status-sick     { background: rgba(229,107,111,0.2); color: #f09497; }
+    .status-time_off { background: rgba(232,184,75,0.2);  color: #f0cc7a; }
+    .status-holiday  { background: rgba(107,191,106,0.2); color: #90d48f; }
+
+    .hours-table-wrap { overflow-x: auto; }
+    .hours-table { width: 100%; border-collapse: collapse; }
+    .hours-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 0.78rem; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+    .hours-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .hours-table tr:hover td { background: var(--surface2); }
+    .hours-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .hours-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 99px; min-width: 80px; }
+    .hours-bar-fill { height: 100%; border-radius: 99px; }
+
+    /* Admin */
+    .admin-section { margin-bottom: 36px; }
+    .admin-section h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .users-table { width: 100%; border-collapse: collapse; }
+    .users-table th { background: var(--surface2); padding: 10px 14px; text-align: left; font-size: 0.78rem; color: var(--text-dim); border-bottom: 1px solid var(--border); }
+    .users-table td { padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .users-table tr:hover td { background: var(--surface2); }
+    .badge-admin { background: rgba(79,134,198,0.2); color: #7ab3e8; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 600; }
+    .badge-user  { background: rgba(136,146,164,0.15); color: #8892a4; padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; }
+
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 100; }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 400px; max-width: 95vw; max-height: 90vh; overflow-y: auto; }
+    .modal h3 { font-size: 1rem; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; margin-top: 12px; }
+    .modal select, .modal input[type=text], .modal input[type=password], .modal input[type=date], .modal input[type=time] {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 0.85rem;
+    }
+    .modal input:focus, .modal select:focus { outline: none; border-color: var(--accent); }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-danger { background: rgba(229,107,111,0.2); color: #f09497; border: 1px solid rgba(229,107,111,0.3); }
+    .btn-danger:hover { background: rgba(229,107,111,0.35); }
+    .btn-sm { padding: 4px 10px; font-size: 0.75rem; }
+    .btn-icon { background: none; border: none; cursor: pointer; color: var(--text-dim); font-size: 1rem; padding: 4px 6px; border-radius: 4px; }
+    .btn-icon:hover { color: var(--text); background: var(--surface2); }
+
+    .color-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+    .color-swatch { width: 28px; height: 28px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: border-color .15s; }
+    .color-swatch.selected { border-color: #fff; }
+
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 12px 18px; font-size: 0.85rem; z-index: 200; opacity: 0; transform: translateY(8px); transition: opacity .2s, transform .2s; pointer-events: none; }
+    .toast.show { opacity: 1; transform: none; }
+
+    .hours-date-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+    .hours-date-bar label { font-size: 0.85rem; color: var(--text-dim); }
+    .hours-date-bar input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Team <span>Tracker</span></h1>
+  <div class="header-right">
+    <div class="header-time" id="utcClock"></div>
+    <div class="user-chip">Signed in as <strong id="headerUsername">…</strong></div>
+    <button class="btn btn-ghost" style="padding:6px 12px;font-size:0.8rem" onclick="changePasswordModal()">Password</button>
+    <button class="btn btn-ghost" style="padding:6px 12px;font-size:0.8rem" onclick="logout()">Sign out</button>
+  </div>
+</header>
+
+<div class="tabs" id="tabBar">
+  <button class="tab active" data-tab="calendar" onclick="switchTab('calendar')">Calendar</button>
+  <button class="tab" data-tab="team" onclick="switchTab('team')">Team</button>
+  <button class="tab" data-tab="hours" onclick="switchTab('hours')">Working Hours</button>
+  <button class="tab" data-tab="admin" id="adminTab" style="display:none" onclick="switchTab('admin')">Admin</button>
+</div>
+
+<div class="main">
+
+  <!-- CALENDAR -->
+  <div class="page active" id="page-calendar">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#4F86C6"></div>Vacation</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E56B6F"></div>Sick Leave</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E8B84B"></div>Time Off</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6BBF6A"></div>Holiday</div>
+    </div>
+    <div class="calendar-nav">
+      <button class="btn-nav" onclick="changeMonth(-1)">‹</button>
+      <h2 id="monthLabel"></h2>
+      <button class="btn-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="page" id="page-team">
+    <div class="team-header">
+      <div></div>
+      <button class="btn btn-primary" id="addMemberBtn" style="display:none" onclick="openMemberModal()">+ Add Member</button>
+    </div>
+    <div class="team-grid" id="teamGrid"></div>
+  </div>
+
+  <!-- HOURS -->
+  <div class="page" id="page-hours">
+    <div class="hours-date-bar">
+      <label>Date:</label>
+      <input type="date" id="hourDatePicker" onchange="renderHours()" />
+      <button class="btn btn-primary" onclick="openAddHoursModal()">+ Log Hours</button>
+    </div>
+    <div class="hours-table-wrap">
+      <table class="hours-table">
+        <thead><tr><th>Member</th><th>Start</th><th>End</th><th>Total</th><th>Hours bar</th><th></th></tr></thead>
+        <tbody id="hoursBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ADMIN -->
+  <div class="page" id="page-admin">
+    <div class="admin-section">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="border:none;margin:0;padding:0">Users</h3>
+        <button class="btn btn-primary" onclick="openAddUserModal()">+ Add User</button>
+      </div>
+      <table class="users-table">
+        <thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
+        <tbody id="usersBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: calendar entry -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3 id="modalTitle">Add Entry</h3>
+    <label>Member</label>
+    <select id="modalMember"></select>
+    <label>Date</label>
+    <input type="date" id="modalDate" />
+    <label>Type</label>
+    <select id="modalType">
+      <option value="vacation">Vacation</option>
+      <option value="sick">Sick Leave</option>
+      <option value="time_off">Time Off</option>
+      <option value="holiday">Holiday</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="modalDelete" onclick="deleteEntry()" style="display:none">Delete</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: hours -->
+<div class="modal-overlay" id="hoursModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3>Log Working Hours</h3>
+    <label>Member</label>
+    <select id="hmMember"></select>
+    <label>Date</label>
+    <input type="date" id="hmDate" />
+    <div class="form-row">
+      <div><label>Start Time</label><input type="time" id="hmStart" /></div>
+      <div><label>End Time</label><input type="time" id="hmEnd" /></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('hoursModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHours()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: add/edit team member -->
+<div class="modal-overlay" id="memberModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3 id="memberModalTitle">Add Member</h3>
+    <div class="form-row">
+      <div><label>Full Name</label><input type="text" id="mmName" placeholder="Jane Smith" /></div>
+      <div><label>Role</label><input type="text" id="mmRole" placeholder="Engineering" /></div>
+    </div>
+    <label>Timezone</label>
+    <select id="mmTimezone"></select>
+    <label>Initials (avatar)</label>
+    <input type="text" id="mmAvatar" placeholder="JS" maxlength="3" />
+    <label>Color</label>
+    <div class="color-row" id="colorSwatches"></div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="mmDelete" onclick="deleteMember()" style="display:none">Delete</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('memberModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveMember()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: add user (admin) -->
+<div class="modal-overlay" id="userModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3 id="userModalTitle">Add User</h3>
+    <label>Username</label>
+    <input type="text" id="umUsername" placeholder="jane.smith" />
+    <label id="umPasswordLabel">Password (min 6 chars)</label>
+    <input type="password" id="umPassword" placeholder="••••••••" />
+    <label style="display:flex;align-items:center;gap:8px;margin-top:14px;cursor:pointer">
+      <input type="checkbox" id="umIsAdmin" style="width:auto" /> Admin access
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('userModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" id="umSaveBtn" onclick="saveUser()">Add User</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: change own password -->
+<div class="modal-overlay" id="pwModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal">
+    <h3>Change Password</h3>
+    <label>Current Password</label>
+    <input type="password" id="pwCurrent" placeholder="••••••••" />
+    <label>New Password (min 6 chars)</label>
+    <input type="password" id="pwNew" placeholder="••••••••" />
+    <label>Confirm New Password</label>
+    <input type="password" id="pwConfirm" placeholder="••••••••" />
+    <div style="color:#f09497;font-size:.8rem;margin-top:8px;min-height:18px" id="pwError"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('pwModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="savePassword()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──────────────────────────────────────────────────
+let members = [], entries = [], hours = [];
+let currentYear, currentMonth;
+let editingMemberId = null, editingEntry = null, editingUserId = null;
+let selectedColor = '#4F86C6';
+let currentUser = null;
+
+const today = new Date();
+currentYear  = today.getFullYear();
+currentMonth = today.getMonth();
+
+const COLORS = ['#4F86C6','#E07B54','#6BBF6A','#B57BCC','#E8B84B','#5BBCB8','#E56B6F','#78A5D9','#F0A868','#A8D8A8'];
+const TIMEZONES = [
+  'Pacific/Honolulu','America/Anchorage','America/Los_Angeles','America/Denver',
+  'America/Chicago','America/New_York','America/Sao_Paulo','Europe/London',
+  'Europe/Paris','Europe/Warsaw','Europe/Athens','Europe/Istanbul',
+  'Asia/Dubai','Asia/Karachi','Asia/Kolkata','Asia/Bangkok','Asia/Shanghai',
+  'Asia/Tokyo','Asia/Seoul','Australia/Sydney','Pacific/Auckland'
+];
+
+// ── API ────────────────────────────────────────────────────
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: body ? { 'Content-Type': 'application/json' } : {},
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  return res.json();
+}
+
+// ── Auth ───────────────────────────────────────────────────
+async function logout() {
+  await api('POST', '/api/auth/logout');
+  window.location.href = '/login';
+}
+
+function changePasswordModal() {
+  document.getElementById('pwCurrent').value = '';
+  document.getElementById('pwNew').value     = '';
+  document.getElementById('pwConfirm').value = '';
+  document.getElementById('pwError').textContent = '';
+  document.getElementById('pwModal').style.display = 'flex';
+}
+
+async function savePassword() {
+  const currentPassword = document.getElementById('pwCurrent').value;
+  const newPassword     = document.getElementById('pwNew').value;
+  const confirm         = document.getElementById('pwConfirm').value;
+  const err = document.getElementById('pwError');
+  if (newPassword !== confirm) { err.textContent = 'Passwords do not match'; return; }
+  if (newPassword.length < 6)  { err.textContent = 'Min 6 characters'; return; }
+  const res = await api('POST', '/api/auth/change-password', { currentPassword, newPassword });
+  if (res.ok) { document.getElementById('pwModal').style.display = 'none'; toast('Password changed'); }
+  else        { err.textContent = res.error || 'Failed'; }
+}
+
+// ── Tabs ───────────────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  if (name === 'hours') renderHours();
+  if (name === 'team')  loadAndRenderTeam();
+  if (name === 'admin') renderUsers();
+}
+
+// ── Clock ──────────────────────────────────────────────────
+function updateClock() {
+  document.getElementById('utcClock').textContent = 'UTC ' + new Date().toUTCString().slice(17, 25);
+}
+updateClock(); setInterval(updateClock, 1000);
+
+// ── Helpers ────────────────────────────────────────────────
+function toISO(d) { return d.toISOString().slice(0, 10); }
+function localTime(tz) { return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit' }); }
+function tzOffset(tz) {
+  const s = new Date().toLocaleTimeString('en-GB', { timeZone: tz, timeZoneName:'shortOffset' });
+  const m = s.match(/GMT([+-]\d+(?::\d+)?)/);
+  return m ? 'GMT' + m[1] : tz;
+}
+function hoursDecimal(start, end) {
+  const [sh,sm] = start.split(':').map(Number), [eh,em] = end.split(':').map(Number);
+  return (eh*60+em - sh*60-sm) / 60;
+}
+function getEntry(memberId, date) { return entries.find(e => e.member_id === memberId && e.date === date); }
+function getHours(memberId, date) { return hours.find(h => h.member_id === memberId && h.date === date); }
+function todayStatus(member) {
+  const td = toISO(today);
+  const e = getEntry(member.id, td);
+  if (e) return e.type;
+  return getHours(member.id, td) ? 'working' : 'off';
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+function populateMemberSelect(id) {
+  document.getElementById(id).innerHTML = members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+}
+
+// ── Init ───────────────────────────────────────────────────
+async function init() {
+  currentUser = await api('GET', '/api/auth/me');
+  if (!currentUser) return;
+  document.getElementById('headerUsername').textContent = currentUser.username;
+  if (currentUser.isAdmin) {
+    document.getElementById('adminTab').style.display = '';
+    document.getElementById('addMemberBtn').style.display = '';
+  }
+  members = await api('GET', '/api/members');
+  await loadEntries();
+  renderCalendar();
+}
+
+// ── CALENDAR ───────────────────────────────────────────────
+async function loadEntries() {
+  entries = await api('GET', `/api/entries?year=${currentYear}&month=${currentMonth + 1}`);
+}
+
+async function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+  if (currentMonth > 11) { currentMonth = 0;  currentYear++; }
+  await loadEntries();
+  renderCalendar();
+}
+
+function renderCalendar() {
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const todayStr    = toISO(today);
+  document.getElementById('monthLabel').textContent =
+    new Date(currentYear, currentMonth, 1).toLocaleString('en-US', { month:'long', year:'numeric' });
+
+  let html = '<table><thead><tr><th style="text-align:left;padding-left:12px">Member</th>';
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dt  = new Date(currentYear, currentMonth, d);
+    const dow = dt.getDay();
+    const ds  = toISO(dt);
+    html += `<th class="${ds===todayStr?'today-col':''}" style="${dow===0||dow===6?'opacity:.5':''}">${dt.toLocaleString('en-US',{weekday:'short'})}<br>${d}</th>`;
+  }
+  html += '</tr></thead><tbody>';
+  for (const m of members) {
+    html += `<tr><td class="member-cell"><div class="member-info">
+      <div class="avatar" style="background:${m.color}">${m.avatar}</div>
+      <div><div class="member-name">${m.name.split(' ')[0]}</div><div class="member-role">${m.role}</div></div>
+    </div></td>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const dt  = new Date(currentYear, currentMonth, d);
+      const dow = dt.getDay();
+      const ds  = toISO(dt);
+      const entry  = getEntry(m.id, ds);
+      const labels = { vacation:'V', sick:'S', time_off:'T', holiday:'H' };
+      const inner  = entry ? `<div class="entry-dot entry-${entry.type}">${labels[entry.type]}</div>` : '';
+      html += `<td class="day-cell${dow===0||dow===6?' weekend':''}${ds===toISO(today)?' today-col':''}" onclick="openEntryModal(${m.id},'${ds}')">${inner}</td>`;
+    }
+    html += '</tr>';
+  }
+  html += '</tbody></table>';
+  document.getElementById('calendarGrid').innerHTML = html;
+}
+
+function openEntryModal(memberId, date) {
+  populateMemberSelect('modalMember');
+  document.getElementById('modalMember').value = memberId;
+  document.getElementById('modalDate').value   = date;
+  const existing = getEntry(memberId, date);
+  document.getElementById('modalTitle').textContent    = existing ? 'Edit Entry' : 'Add Entry';
+  document.getElementById('modalType').value           = existing ? existing.type : 'vacation';
+  document.getElementById('modalDelete').style.display = existing ? '' : 'none';
+  editingEntry = existing ? { memberId, date } : null;
+  document.getElementById('modal').style.display = 'flex';
+}
+
+async function saveEntry() {
+  const member_id = parseInt(document.getElementById('modalMember').value);
+  const date      = document.getElementById('modalDate').value;
+  const type      = document.getElementById('modalType').value;
+  if (!date) return;
+  await api('PUT', '/api/entries', { member_id, date, type });
+  document.getElementById('modal').style.display = 'none';
+  await loadEntries(); renderCalendar(); toast('Entry saved');
+}
+
+async function deleteEntry() {
+  if (!editingEntry) return;
+  await api('DELETE', '/api/entries', { member_id: editingEntry.memberId, date: editingEntry.date });
+  document.getElementById('modal').style.display = 'none';
+  await loadEntries(); renderCalendar(); toast('Entry deleted');
+}
+
+// ── TEAM ───────────────────────────────────────────────────
+async function loadAndRenderTeam() {
+  hours = await api('GET', `/api/hours?date=${toISO(today)}`);
+  renderTeam();
+}
+
+function renderTeam() {
+  const statusLabels = { working:'Working', off:'Off', vacation:'Vacation', sick:'Sick Leave', time_off:'Time Off', holiday:'Holiday' };
+  document.getElementById('teamGrid').innerHTML = members.map(m => {
+    const status = todayStatus(m);
+    const h = getHours(m.id, toISO(today));
+    const canEdit = currentUser && currentUser.isAdmin;
+    return `<div class="member-card">
+      <div class="card-header">
+        <div class="card-header-left">
+          <div class="card-avatar" style="background:${m.color}">${m.avatar}</div>
+          <div><div class="card-name">${m.name}</div><div class="card-role">${m.role}</div></div>
+        </div>
+        ${canEdit ? `<button class="btn-icon" onclick="openMemberModal(${m.id})" title="Edit">✎</button>` : ''}
+      </div>
+      <div class="card-info">
+        <div class="card-row"><span class="card-label">Local time</span><span class="local-time" data-tz="${m.timezone}">${localTime(m.timezone)}</span></div>
+        <div class="card-row"><span class="card-label">Timezone</span><span style="font-size:.78rem">${tzOffset(m.timezone)}</span></div>
+        <div class="card-row"><span class="card-label">Today's hours</span><span>${h ? h.start+' – '+h.end : '—'}</span></div>
+        <div class="card-row"><span class="card-label">Status</span><span class="status-badge status-${status}">${statusLabels[status]||status}</span></div>
+      </div>
+    </div>`;
+  }).join('');
+  clearInterval(window._teamClock);
+  window._teamClock = setInterval(() => {
+    document.querySelectorAll('[data-tz]').forEach(el => { el.textContent = localTime(el.dataset.tz); });
+  }, 1000);
+}
+
+// ── MEMBER MODAL ───────────────────────────────────────────
+function selectColor(c) { selectedColor = c; document.getElementById('colorSwatches').innerHTML = buildColorSwatches(c); }
+function buildColorSwatches(sel) {
+  return COLORS.map(c => `<div class="color-swatch${c===sel?' selected':''}" style="background:${c}" onclick="selectColor('${c}')"></div>`).join('');
+}
+
+function openMemberModal(id) {
+  editingMemberId = id || null;
+  document.getElementById('memberModalTitle').textContent = id ? 'Edit Member' : 'Add Member';
+  document.getElementById('mmDelete').style.display = id ? '' : 'none';
+  document.getElementById('mmTimezone').innerHTML = TIMEZONES.map(tz => `<option value="${tz}">${tz}</option>`).join('');
+  if (id) {
+    const m = members.find(x => x.id === id);
+    document.getElementById('mmName').value   = m.name;
+    document.getElementById('mmRole').value   = m.role;
+    document.getElementById('mmAvatar').value = m.avatar;
+    document.getElementById('mmTimezone').value = m.timezone;
+    selectedColor = m.color;
+  } else {
+    document.getElementById('mmName').value   = '';
+    document.getElementById('mmRole').value   = '';
+    document.getElementById('mmAvatar').value = '';
+    selectedColor = COLORS[0];
+  }
+  document.getElementById('colorSwatches').innerHTML = buildColorSwatches(selectedColor);
+  document.getElementById('memberModal').style.display = 'flex';
+}
+
+async function saveMember() {
+  const name     = document.getElementById('mmName').value.trim();
+  const role     = document.getElementById('mmRole').value.trim();
+  const timezone = document.getElementById('mmTimezone').value;
+  const avatar   = (document.getElementById('mmAvatar').value.trim() || name.split(' ').map(w=>w[0]).join('')).toUpperCase().slice(0,2);
+  if (!name || !role) return;
+  if (editingMemberId) {
+    await api('PUT', `/api/members/${editingMemberId}`, { name, role, timezone, avatar, color: selectedColor });
+    toast('Member updated');
+  } else {
+    await api('POST', '/api/members', { name, role, timezone, avatar, color: selectedColor });
+    toast('Member added');
+  }
+  document.getElementById('memberModal').style.display = 'none';
+  members = await api('GET', '/api/members');
+  renderTeam(); renderCalendar();
+}
+
+async function deleteMember() {
+  if (!editingMemberId) return;
+  await api('DELETE', `/api/members/${editingMemberId}`);
+  document.getElementById('memberModal').style.display = 'none';
+  members = await api('GET', '/api/members');
+  await loadEntries(); renderTeam(); renderCalendar(); toast('Member removed');
+}
+
+// ── HOURS ──────────────────────────────────────────────────
+async function renderHours() {
+  const picker = document.getElementById('hourDatePicker');
+  if (!picker.value) picker.value = toISO(today);
+  const date = picker.value;
+  hours = await api('GET', `/api/hours?date=${date}`);
+  const maxH = 12;
+  document.getElementById('hoursBody').innerHTML = members.map(m => {
+    const h = getHours(m.id, date);
+    const avatarHtml = `<div class="member-info" style="gap:8px"><div class="avatar" style="background:${m.color};width:28px;height:28px;font-size:.65rem">${m.avatar}</div>${m.name}</div>`;
+    if (!h) return `<tr><td>${avatarHtml}</td><td style="color:var(--text-dim)">—</td><td style="color:var(--text-dim)">—</td><td style="color:var(--text-dim)">—</td><td></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openEditHoursModal(${m.id},'${date}')">Log</button></td></tr>`;
+    const total = hoursDecimal(h.start, h.end);
+    const pct   = Math.min(100, (total / maxH) * 100);
+    return `<tr><td>${avatarHtml}</td><td>${h.start}</td><td>${h.end}</td><td>${total.toFixed(1)}h</td>
+      <td><div class="hours-bar-wrap"><div class="hours-bar-bg"><div class="hours-bar-fill" style="width:${pct}%;background:${m.color}"></div></div><span style="font-size:.75rem;color:var(--text-dim)">${total.toFixed(1)}h</span></div></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openEditHoursModal(${m.id},'${date}')">Edit</button></td></tr>`;
+  }).join('');
+}
+
+function openAddHoursModal() {
+  populateMemberSelect('hmMember');
+  document.getElementById('hmDate').value  = document.getElementById('hourDatePicker').value || toISO(today);
+  document.getElementById('hmStart').value = '';
+  document.getElementById('hmEnd').value   = '';
+  document.getElementById('hoursModal').style.display = 'flex';
+}
+
+function openEditHoursModal(memberId, date) {
+  populateMemberSelect('hmMember');
+  const h = getHours(memberId, date);
+  document.getElementById('hmMember').value = memberId;
+  document.getElementById('hmDate').value   = date;
+  document.getElementById('hmStart').value  = h ? h.start : '';
+  document.getElementById('hmEnd').value    = h ? h.end   : '';
+  document.getElementById('hoursModal').style.display = 'flex';
+}
+
+async function saveHours() {
+  const member_id = parseInt(document.getElementById('hmMember').value);
+  const date      = document.getElementById('hmDate').value;
+  const start     = document.getElementById('hmStart').value;
+  const end       = document.getElementById('hmEnd').value;
+  if (!date || !start || !end) return;
+  await api('PUT', '/api/hours', { member_id, date, start, end });
+  document.getElementById('hoursModal').style.display = 'none';
+  renderHours(); toast('Hours saved');
+}
+
+// ── ADMIN: users ───────────────────────────────────────────
+async function renderUsers() {
+  const users = await api('GET', '/api/admin/users');
+  document.getElementById('usersBody').innerHTML = users.map(u => `
+    <tr>
+      <td>${u.username}</td>
+      <td><span class="${u.is_admin ? 'badge-admin' : 'badge-user'}">${u.is_admin ? 'Admin' : 'Member'}</span></td>
+      <td style="color:var(--text-dim);font-size:.8rem">${u.created_at.slice(0,10)}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-ghost btn-sm" onclick="openResetPasswordModal(${u.id},'${u.username}')">Reset PW</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser(${u.id},'${u.username}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+function openAddUserModal() {
+  editingUserId = null;
+  document.getElementById('userModalTitle').textContent = 'Add User';
+  document.getElementById('umUsername').value   = '';
+  document.getElementById('umPassword').value   = '';
+  document.getElementById('umIsAdmin').checked  = false;
+  document.getElementById('umUsername').disabled = false;
+  document.getElementById('umPasswordLabel').textContent = 'Password (min 6 chars)';
+  document.getElementById('umSaveBtn').textContent = 'Add User';
+  document.getElementById('userModal').style.display = 'flex';
+}
+
+function openResetPasswordModal(id, username) {
+  editingUserId = id;
+  document.getElementById('userModalTitle').textContent = `Reset password — ${username}`;
+  document.getElementById('umUsername').value    = username;
+  document.getElementById('umPassword').value    = '';
+  document.getElementById('umIsAdmin').checked   = false;
+  document.getElementById('umUsername').disabled = true;
+  document.getElementById('umPasswordLabel').textContent = 'New Password (min 6 chars)';
+  document.getElementById('umSaveBtn').textContent = 'Reset Password';
+  document.getElementById('userModal').style.display = 'flex';
+}
+
+async function saveUser() {
+  const username = document.getElementById('umUsername').value.trim();
+  const password = document.getElementById('umPassword').value;
+  const is_admin = document.getElementById('umIsAdmin').checked;
+  if (editingUserId) {
+    const res = await api('PUT', `/api/admin/users/${editingUserId}/reset-password`, { password });
+    if (res.ok) { document.getElementById('userModal').style.display = 'none'; toast('Password reset'); }
+    else alert(res.error);
+  } else {
+    const res = await api('POST', '/api/admin/users', { username, password, is_admin });
+    if (res.id) { document.getElementById('userModal').style.display = 'none'; renderUsers(); toast('User added'); }
+    else alert(res.error);
+  }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Delete user "${username}"? This cannot be undone.`)) return;
+  await api('DELETE', `/api/admin/users/${id}`);
+  renderUsers(); toast('User deleted');
+}
+
+init();
+</script>
+</body>
+</html>

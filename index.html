@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Tracker</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #22263a;
+      --border: #2e3249;
+      --text: #e2e8f0;
+      --text-dim: #8892a4;
+      --accent: #4F86C6;
+      --vacation: #4F86C6;
+      --sick: #E56B6F;
+      --time_off: #E8B84B;
+      --holiday: #6BBF6A;
+      --radius: 10px;
+    }
+
+    body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; min-height: 100vh; }
+
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.3px; }
+    header h1 span { color: var(--accent); }
+    .header-time { font-size: 0.8rem; color: var(--text-dim); }
+
+    .tabs {
+      display: flex;
+      gap: 4px;
+      padding: 16px 32px 0;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .tab {
+      padding: 8px 18px;
+      border: none;
+      background: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 0.9rem;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); }
+    .tab:hover:not(.active) { color: var(--text); }
+
+    .main { padding: 28px 32px; }
+
+    /* ── LEGEND ── */
+    .legend { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+    .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.8rem; color: var(--text-dim); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+
+    /* ── CALENDAR ── */
+    .calendar-nav { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+    .calendar-nav h2 { font-size: 1.1rem; font-weight: 600; min-width: 180px; }
+    .btn-nav {
+      background: var(--surface2); border: 1px solid var(--border); color: var(--text);
+      width: 32px; height: 32px; border-radius: 6px; cursor: pointer; font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .btn-nav:hover { background: var(--border); }
+
+    .calendar-grid { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; min-width: 700px; }
+    thead th {
+      background: var(--surface2);
+      padding: 10px 8px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-align: center;
+      border: 1px solid var(--border);
+    }
+    thead th.today-col { color: var(--accent); }
+    tbody td {
+      border: 1px solid var(--border);
+      padding: 0;
+      height: 40px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .member-cell {
+      padding: 8px 12px;
+      text-align: left;
+      white-space: nowrap;
+      background: var(--surface);
+      position: sticky;
+      left: 0;
+      z-index: 1;
+      min-width: 160px;
+    }
+    .member-info { display: flex; align-items: center; gap: 8px; }
+    .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .member-name { font-size: 0.82rem; font-weight: 500; }
+    .member-role { font-size: 0.7rem; color: var(--text-dim); }
+
+    .day-cell { cursor: pointer; transition: filter 0.1s; }
+    .day-cell:hover { filter: brightness(1.3); }
+    .day-cell.weekend { background: rgba(255,255,255,0.02); }
+    .day-cell.today-col { background: rgba(79,134,198,0.07); }
+
+    .entry-dot {
+      width: 26px; height: 26px; border-radius: 6px;
+      margin: auto;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.65rem; font-weight: 600;
+    }
+    .entry-vacation { background: rgba(79,134,198,0.25); color: #7ab3e8; }
+    .entry-sick     { background: rgba(229,107,111,0.25); color: #f09497; }
+    .entry-time_off { background: rgba(232,184,75,0.25);  color: #f0cc7a; }
+    .entry-holiday  { background: rgba(107,191,106,0.25); color: #90d48f; }
+
+    /* ── TEAM CARDS ── */
+    .team-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .member-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+    .card-avatar { width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; font-weight: 700; color: #fff; }
+    .card-name { font-size: 0.95rem; font-weight: 600; }
+    .card-role { font-size: 0.78rem; color: var(--text-dim); margin-top: 2px; }
+
+    .card-info { display: flex; flex-direction: column; gap: 8px; }
+    .card-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; }
+    .card-label { color: var(--text-dim); }
+    .card-value { font-weight: 500; }
+    .local-time { font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .status-badge {
+      padding: 2px 8px; border-radius: 99px; font-size: 0.72rem; font-weight: 600;
+    }
+    .status-working  { background: rgba(107,191,106,0.2); color: #90d48f; }
+    .status-off      { background: rgba(229,107,111,0.2); color: #f09497; }
+    .status-vacation { background: rgba(79,134,198,0.2);  color: #7ab3e8; }
+    .status-sick     { background: rgba(229,107,111,0.2); color: #f09497; }
+    .status-time_off { background: rgba(232,184,75,0.2);  color: #f0cc7a; }
+
+    /* ── HOURS LOG ── */
+    .hours-table-wrap { overflow-x: auto; }
+    .hours-table { width: 100%; border-collapse: collapse; }
+    .hours-table th {
+      background: var(--surface2); padding: 10px 14px;
+      text-align: left; font-size: 0.78rem; color: var(--text-dim);
+      border-bottom: 1px solid var(--border);
+    }
+    .hours-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+    .hours-table tr:hover td { background: var(--surface2); }
+    .hours-bar-wrap { display: flex; align-items: center; gap: 10px; }
+    .hours-bar-bg { flex: 1; height: 6px; background: var(--border); border-radius: 99px; min-width: 80px; }
+    .hours-bar-fill { height: 100%; border-radius: 99px; background: var(--accent); }
+
+    /* ── MODAL ── */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 24px; width: 380px; max-width: 95vw;
+    }
+    .modal h3 { font-size: 1rem; margin-bottom: 16px; }
+    .modal label { display: block; font-size: 0.8rem; color: var(--text-dim); margin-bottom: 4px; margin-top: 12px; }
+    .modal select, .modal input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text); border-radius: 6px; padding: 8px 10px; font-size: 0.85rem;
+    }
+    .modal-actions { display: flex; gap: 8px; margin-top: 20px; justify-content: flex-end; }
+    .btn { padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 500; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { filter: brightness(1.1); }
+    .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-ghost:hover { background: var(--border); }
+    .btn-danger { background: rgba(229,107,111,0.2); color: #f09497; border: 1px solid rgba(229,107,111,0.3); }
+    .btn-danger:hover { background: rgba(229,107,111,0.35); }
+
+    .page { display: none; }
+    .page.active { display: block; }
+  </style>
+</head>
+<body>
+<script src="data.js"></script>
+
+<header>
+  <h1>Team <span>Tracker</span></h1>
+  <div class="header-time" id="utcClock"></div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('calendar')">Calendar</button>
+  <button class="tab" onclick="switchTab('team')">Team</button>
+  <button class="tab" onclick="switchTab('hours')">Working Hours</button>
+</div>
+
+<div class="main">
+
+  <!-- CALENDAR -->
+  <div class="page active" id="page-calendar">
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#4F86C6"></div> Vacation</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E56B6F"></div> Sick Leave</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#E8B84B"></div> Time Off</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#6BBF6A"></div> Holiday</div>
+    </div>
+    <div class="calendar-nav">
+      <button class="btn-nav" onclick="changeMonth(-1)">‹</button>
+      <h2 id="monthLabel"></h2>
+      <button class="btn-nav" onclick="changeMonth(1)">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+  </div>
+
+  <!-- TEAM -->
+  <div class="page" id="page-team">
+    <div class="team-grid" id="teamGrid"></div>
+  </div>
+
+  <!-- HOURS -->
+  <div class="page" id="page-hours">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:20px;">
+      <label style="font-size:0.85rem; color:var(--text-dim)">Date:</label>
+      <input type="date" id="hourDatePicker" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:6px 10px;font-size:0.85rem;" onchange="renderHours()" />
+      <button class="btn btn-primary" onclick="openAddHoursModal()">+ Log Hours</button>
+    </div>
+    <div class="hours-table-wrap">
+      <table class="hours-table">
+        <thead><tr><th>Member</th><th>Start</th><th>End</th><th>Total</th><th>Hours bar</th><th></th></tr></thead>
+        <tbody id="hoursBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- MODAL: add/edit entry -->
+<div class="modal-overlay" id="modal" style="display:none" onclick="closeModal(event)">
+  <div class="modal">
+    <h3 id="modalTitle">Add Entry</h3>
+    <label>Member</label>
+    <select id="modalMember"></select>
+    <label>Date</label>
+    <input type="date" id="modalDate" />
+    <label>Type</label>
+    <select id="modalType">
+      <option value="vacation">Vacation</option>
+      <option value="sick">Sick Leave</option>
+      <option value="time_off">Time Off</option>
+      <option value="holiday">Holiday</option>
+    </select>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="modalDelete" onclick="deleteEntry()" style="display:none">Delete</button>
+      <button class="btn btn-ghost" onclick="document.getElementById('modal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: log hours -->
+<div class="modal-overlay" id="hoursModal" style="display:none" onclick="closeHoursModal(event)">
+  <div class="modal">
+    <h3>Log Working Hours</h3>
+    <label>Member</label>
+    <select id="hmMember"></select>
+    <label>Date</label>
+    <input type="date" id="hmDate" />
+    <label>Start Time</label>
+    <input type="time" id="hmStart" />
+    <label>End Time</label>
+    <input type="time" id="hmEnd" />
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('hoursModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHours()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ── State ──────────────────────────────────────────────────
+  let currentYear, currentMonth;
+  let editingEntry = null; // { memberId, date } for existing entry
+
+  const today = new Date();
+  currentYear  = today.getFullYear();
+  currentMonth = today.getMonth(); // 0-based
+
+  // ── Tabs ───────────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach((t,i) => {
+      const names = ['calendar','team','hours'];
+      t.classList.toggle('active', names[i] === name);
+    });
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    if (name === 'hours') renderHours();
+    if (name === 'team')  renderTeam();
+  }
+
+  // ── UTC Clock ──────────────────────────────────────────────
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('utcClock').textContent =
+      'UTC ' + now.toUTCString().slice(17, 25);
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Helpers ────────────────────────────────────────────────
+  function toISODate(d) {
+    return d.toISOString().slice(0,10);
+  }
+  function getEntry(memberId, date) {
+    return TEAM_DATA.entries.find(e => e.memberId === memberId && e.date === date);
+  }
+  function getMember(id) {
+    return TEAM_DATA.members.find(m => m.id === id);
+  }
+  function localTimeFor(tz) {
+    return new Date().toLocaleTimeString('en-GB', { timeZone: tz, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+  }
+  function offsetFor(tz) {
+    const s = new Date().toLocaleTimeString('en-GB', { timeZone: tz, timeZoneName:'shortOffset' });
+    const m = s.match(/GMT([+-]\d+(?::\d+)?)/);
+    return m ? 'GMT' + m[1] : tz;
+  }
+  function hoursDecimal(start, end) {
+    const [sh,sm] = start.split(':').map(Number);
+    const [eh,em] = end.split(':').map(Number);
+    return (eh*60+em - sh*60-sm) / 60;
+  }
+  function todayStatus(member) {
+    const td = toISODate(today);
+    const entry = getEntry(member.id, td);
+    if (entry) return entry.type;
+    const h = getHours(member.id, td);
+    if (h) return 'working';
+    return 'off';
+  }
+  function getHours(memberId, date) {
+    return TEAM_DATA.hours.find(h => h.memberId === memberId && h.date === date);
+  }
+
+  // ── CALENDAR ───────────────────────────────────────────────
+  function changeMonth(delta) {
+    currentMonth += delta;
+    if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+    if (currentMonth > 11) { currentMonth = 0;  currentYear++; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    const monthName = new Date(currentYear, currentMonth, 1)
+      .toLocaleString('en-US', { month: 'long', year: 'numeric' });
+    document.getElementById('monthLabel').textContent = monthName;
+
+    const todayStr = toISODate(today);
+
+    // Build header
+    let html = '<table><thead><tr><th style="text-align:left;padding-left:12px;">Member</th>';
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(currentYear, currentMonth, d);
+      const dow  = date.getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      const dateStr = toISODate(date);
+      const isToday = dateStr === todayStr;
+      const dayName = date.toLocaleString('en-US', { weekday:'short' });
+      html += `<th class="${isToday ? 'today-col' : ''}" style="${isWeekend ? 'opacity:0.5' : ''}">${dayName}<br>${d}</th>`;
+    }
+    html += '</tr></thead><tbody>';
+
+    // Build rows
+    for (const member of TEAM_DATA.members) {
+      html += `<tr>
+        <td class="member-cell">
+          <div class="member-info">
+            <div class="avatar" style="background:${member.color}">${member.avatar}</div>
+            <div>
+              <div class="member-name">${member.name.split(' ')[0]}</div>
+              <div class="member-role">${member.role}</div>
+            </div>
+          </div>
+        </td>`;
+      for (let d = 1; d <= daysInMonth; d++) {
+        const date    = new Date(currentYear, currentMonth, d);
+        const dow     = date.getDay();
+        const isWE    = dow === 0 || dow === 6;
+        const dateStr = toISODate(date);
+        const isToday = dateStr === todayStr;
+        const entry   = getEntry(member.id, dateStr);
+        const cls     = [isWE ? 'weekend' : '', isToday ? 'today-col' : ''].filter(Boolean).join(' ');
+
+        let inner = '';
+        if (entry) {
+          const labels = { vacation:'V', sick:'S', time_off:'T', holiday:'H' };
+          inner = `<div class="entry-dot entry-${entry.type}">${labels[entry.type]}</div>`;
+        }
+        html += `<td class="day-cell ${cls}" onclick="openEntryModal(${member.id},'${dateStr}')" title="${member.name} — ${dateStr}">${inner}</td>`;
+      }
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+    document.getElementById('calendarGrid').innerHTML = html;
+  }
+
+  // ── TEAM ───────────────────────────────────────────────────
+  function renderTeam() {
+    const grid = document.getElementById('teamGrid');
+    grid.innerHTML = TEAM_DATA.members.map(m => {
+      const status = todayStatus(m);
+      const statusLabel = { working:'Working', off:'Off', vacation:'Vacation', sick:'Sick', time_off:'Time Off' }[status] || status;
+      const h = getHours(m.id, toISODate(today));
+      const hoursStr = h ? `${h.start} – ${h.end}` : '—';
+      return `
+        <div class="member-card">
+          <div class="card-header">
+            <div class="card-avatar" style="background:${m.color}">${m.avatar}</div>
+            <div>
+              <div class="card-name">${m.name}</div>
+              <div class="card-role">${m.role}</div>
+            </div>
+          </div>
+          <div class="card-info">
+            <div class="card-row">
+              <span class="card-label">Local time</span>
+              <span class="local-time card-value" data-tz="${m.timezone}">${localTimeFor(m.timezone)}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Timezone</span>
+              <span class="card-value" style="font-size:0.78rem">${offsetFor(m.timezone)}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Today's hours</span>
+              <span class="card-value">${hoursStr}</span>
+            </div>
+            <div class="card-row">
+              <span class="card-label">Status</span>
+              <span class="status-badge status-${status}">${statusLabel}</span>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // live clocks
+    clearInterval(window._teamClockInterval);
+    window._teamClockInterval = setInterval(() => {
+      document.querySelectorAll('[data-tz]').forEach(el => {
+        el.textContent = localTimeFor(el.dataset.tz);
+      });
+    }, 1000);
+  }
+
+  // ── HOURS ──────────────────────────────────────────────────
+  function renderHours() {
+    const picker = document.getElementById('hourDatePicker');
+    if (!picker.value) picker.value = toISODate(today);
+    const date = picker.value;
+
+    const maxH = 12;
+    const body = document.getElementById('hoursBody');
+    body.innerHTML = TEAM_DATA.members.map(m => {
+      const h = getHours(m.id, date);
+      if (!h) {
+        return `<tr>
+          <td><div class="member-info" style="gap:8px">
+            <div class="avatar" style="background:${m.color};width:28px;height:28px;font-size:0.65rem">${m.avatar}</div>
+            <span>${m.name}</span>
+          </div></td>
+          <td style="color:var(--text-dim)">—</td><td style="color:var(--text-dim)">—</td>
+          <td style="color:var(--text-dim)">—</td><td></td><td></td>
+        </tr>`;
+      }
+      const total  = hoursDecimal(h.start, h.end);
+      const pct    = Math.min(100, (total / maxH) * 100);
+      return `<tr>
+        <td><div class="member-info" style="gap:8px">
+          <div class="avatar" style="background:${m.color};width:28px;height:28px;font-size:0.65rem">${m.avatar}</div>
+          <span>${m.name}</span>
+        </div></td>
+        <td>${h.start}</td>
+        <td>${h.end}</td>
+        <td>${total.toFixed(1)}h</td>
+        <td><div class="hours-bar-wrap">
+          <div class="hours-bar-bg"><div class="hours-bar-fill" style="width:${pct}%;background:${m.color}"></div></div>
+          <span style="font-size:0.75rem;color:var(--text-dim);white-space:nowrap">${total.toFixed(1)}h</span>
+        </div></td>
+        <td><button class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem" onclick="openEditHoursModal(${m.id},'${date}')">Edit</button></td>
+      </tr>`;
+    }).join('');
+  }
+
+  // ── ENTRY MODAL ────────────────────────────────────────────
+  function populateMemberSelect(selectId) {
+    const sel = document.getElementById(selectId);
+    sel.innerHTML = TEAM_DATA.members.map(m => `<option value="${m.id}">${m.name}</option>`).join('');
+  }
+
+  function openEntryModal(memberId, date) {
+    populateMemberSelect('modalMember');
+    document.getElementById('modalMember').value = memberId;
+    document.getElementById('modalDate').value   = date;
+    const existing = getEntry(memberId, date);
+    if (existing) {
+      document.getElementById('modalTitle').textContent  = 'Edit Entry';
+      document.getElementById('modalType').value         = existing.type;
+      document.getElementById('modalDelete').style.display = '';
+      editingEntry = { memberId, date };
+    } else {
+      document.getElementById('modalTitle').textContent  = 'Add Entry';
+      document.getElementById('modalType').value         = 'vacation';
+      document.getElementById('modalDelete').style.display = 'none';
+      editingEntry = null;
+    }
+    document.getElementById('modal').style.display = 'flex';
+  }
+
+  function closeModal(e) {
+    if (e.target.id === 'modal') document.getElementById('modal').style.display = 'none';
+  }
+
+  function saveEntry() {
+    const memberId = parseInt(document.getElementById('modalMember').value);
+    const date     = document.getElementById('modalDate').value;
+    const type     = document.getElementById('modalType').value;
+    if (!date) return;
+
+    // remove old
+    TEAM_DATA.entries = TEAM_DATA.entries.filter(e => !(e.memberId === memberId && e.date === date));
+    TEAM_DATA.entries.push({ memberId, date, type });
+    document.getElementById('modal').style.display = 'none';
+    renderCalendar();
+  }
+
+  function deleteEntry() {
+    if (!editingEntry) return;
+    TEAM_DATA.entries = TEAM_DATA.entries.filter(
+      e => !(e.memberId === editingEntry.memberId && e.date === editingEntry.date)
+    );
+    document.getElementById('modal').style.display = 'none';
+    renderCalendar();
+  }
+
+  // ── HOURS MODAL ────────────────────────────────────────────
+  function openAddHoursModal() {
+    populateMemberSelect('hmMember');
+    document.getElementById('hmDate').value  = document.getElementById('hourDatePicker').value || toISODate(today);
+    document.getElementById('hmStart').value = '';
+    document.getElementById('hmEnd').value   = '';
+    document.getElementById('hoursModal').style.display = 'flex';
+  }
+
+  function openEditHoursModal(memberId, date) {
+    populateMemberSelect('hmMember');
+    const h = getHours(memberId, date);
+    document.getElementById('hmMember').value = memberId;
+    document.getElementById('hmDate').value   = date;
+    document.getElementById('hmStart').value  = h ? h.start : '';
+    document.getElementById('hmEnd').value    = h ? h.end   : '';
+    document.getElementById('hoursModal').style.display = 'flex';
+  }
+
+  function closeHoursModal(e) {
+    if (e.target.id === 'hoursModal') document.getElementById('hoursModal').style.display = 'none';
+  }
+
+  function saveHours() {
+    const memberId = parseInt(document.getElementById('hmMember').value);
+    const date     = document.getElementById('hmDate').value;
+    const start    = document.getElementById('hmStart').value;
+    const end      = document.getElementById('hmEnd').value;
+    if (!date || !start || !end) return;
+
+    TEAM_DATA.hours = TEAM_DATA.hours.filter(h => !(h.memberId === memberId && h.date === date));
+    TEAM_DATA.hours.push({ memberId, date, start, end });
+    document.getElementById('hoursModal').style.display = 'none';
+    renderHours();
+  }
+
+  // ── Init ───────────────────────────────────────────────────
+  renderCalendar();
+</script>
+</body>
+</html>
