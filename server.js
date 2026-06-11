@@ -26,7 +26,7 @@ if (userCount.c === 0) {
   const initPassword = process.env.ADMIN_INIT_PASSWORD || 'changeme123';
   const hash = bcrypt.hashSync(initPassword, 10);
   db.prepare('INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, 1)')
-    .run('admin', hash);
+    .run(['admin', hash]);
   console.log(`\n===========================================`);
   console.log(`  Admin account created:`);
   console.log(`  Username : admin`);
@@ -87,7 +87,7 @@ app.post('/api/auth/change-password', requireAuth, (req, res) => {
   if (!bcrypt.compareSync(currentPassword, user.password_hash))
     return res.status(401).json({ error: 'Current password is wrong' });
   const hash = bcrypt.hashSync(newPassword, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.session.userId);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run([hash, req.session.userId]);
   res.json({ ok: true });
 });
 
@@ -106,10 +106,11 @@ app.post('/api/admin/users', requireAdmin, (req, res) => {
     return res.status(400).json({ error: 'Username and password (min 6 chars) required' });
   const hash = bcrypt.hashSync(password, 10);
   try {
-    const { lastInsertRowid } = db.prepare(
+    db.prepare(
       'INSERT INTO users (username, password_hash, is_admin) VALUES (?, ?, ?)'
-    ).run(username.trim().toLowerCase(), hash, is_admin ? 1 : 0);
-    res.json(db.prepare('SELECT id, username, is_admin, created_at FROM users WHERE id = ?').get(lastInsertRowid));
+    ).run([username.trim().toLowerCase(), hash, is_admin ? 1 : 0]);
+    const newUser = db.prepare('SELECT id, username, is_admin, created_at FROM users WHERE username = ?').get(username.trim().toLowerCase());
+    res.json(newUser);
   } catch (e) {
     res.status(400).json({ error: 'Username already exists' });
   }
@@ -119,7 +120,7 @@ app.put('/api/admin/users/:id/reset-password', requireAdmin, (req, res) => {
   const { password } = req.body;
   if (!password || password.length < 6) return res.status(400).json({ error: 'Min 6 chars' });
   const hash = bcrypt.hashSync(password, 10);
-  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(hash, req.params.id);
+  db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run([hash, req.params.id]);
   res.json({ ok: true });
 });
 
@@ -139,16 +140,17 @@ app.post('/api/members', requireAdmin, (req, res) => {
   const { name, role, timezone, avatar, color } = req.body;
   if (!name || !role || !timezone || !avatar || !color)
     return res.status(400).json({ error: 'Missing fields' });
-  const { lastInsertRowid } = db.prepare(
+  db.prepare(
     'INSERT INTO members (name, role, timezone, avatar, color) VALUES (?, ?, ?, ?, ?)'
-  ).run(name, role, timezone, avatar, color);
-  res.json(db.prepare('SELECT * FROM members WHERE id = ?').get(lastInsertRowid));
+  ).run([name, role, timezone, avatar, color]);
+  const newMember = db.prepare('SELECT * FROM members WHERE name = ? ORDER BY id DESC').get(name);
+  res.json(newMember);
 });
 
 app.put('/api/members/:id', requireAdmin, (req, res) => {
   const { name, role, timezone, avatar, color } = req.body;
   db.prepare('UPDATE members SET name=?, role=?, timezone=?, avatar=?, color=? WHERE id=?')
-    .run(name, role, timezone, avatar, color, req.params.id);
+    .run([name, role, timezone, avatar, color, req.params.id]);
   res.json(db.prepare('SELECT * FROM members WHERE id = ?').get(req.params.id));
 });
 
@@ -171,12 +173,12 @@ app.put('/api/entries', (req, res) => {
   if (!member_id || !date || !type) return res.status(400).json({ error: 'Missing fields' });
   db.prepare(
     'INSERT INTO entries (member_id, date, type) VALUES (?, ?, ?) ON CONFLICT(member_id, date) DO UPDATE SET type=excluded.type'
-  ).run(member_id, date, type);
+  ).run([member_id, date, type]);
   res.json({ ok: true });
 });
 
 app.delete('/api/entries', (req, res) => {
-  db.prepare('DELETE FROM entries WHERE member_id=? AND date=?').run(req.body.member_id, req.body.date);
+  db.prepare('DELETE FROM entries WHERE member_id=? AND date=?').run([req.body.member_id, req.body.date]);
   res.json({ ok: true });
 });
 
@@ -194,12 +196,12 @@ app.put('/api/hours', (req, res) => {
   if (!member_id || !date || !start || !end) return res.status(400).json({ error: 'Missing fields' });
   db.prepare(
     'INSERT INTO hours (member_id, date, start, end) VALUES (?, ?, ?, ?) ON CONFLICT(member_id, date) DO UPDATE SET start=excluded.start, end=excluded.end'
-  ).run(member_id, date, start, end);
+  ).run([member_id, date, start, end]);
   res.json({ ok: true });
 });
 
 app.delete('/api/hours', (req, res) => {
-  db.prepare('DELETE FROM hours WHERE member_id=? AND date=?').run(req.body.member_id, req.body.date);
+  db.prepare('DELETE FROM hours WHERE member_id=? AND date=?').run([req.body.member_id, req.body.date]);
   res.json({ ok: true });
 });
 

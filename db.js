@@ -76,14 +76,14 @@ if (count.c === 0) {
   const insertEntry = db.prepare('INSERT OR IGNORE INTO entries (member_id, date, type) VALUES (?, ?, ?)');
   const insertHours = db.prepare('INSERT OR IGNORE INTO hours (member_id, date, start, end) VALUES (?, ?, ?, ?)');
 
-  insertEntry.run(ids[0], today, 'vacation');
-  insertEntry.run(ids[1], today, 'sick');
-  insertEntry.run(ids[2], today, 'time_off');
-  insertHours.run(ids[3], today, '08:30', '16:30');
-  insertHours.run(ids[4], today, '09:00', '18:00');
-  insertHours.run(ids[5], today, '07:00', '15:00');
-  insertHours.run(ids[6], today, '09:00', '17:00');
-  insertHours.run(ids[7], today, '10:00', '19:00');
+  insertEntry.run([ids[0], today, 'vacation']);
+  insertEntry.run([ids[1], today, 'sick']);
+  insertEntry.run([ids[2], today, 'time_off']);
+  insertHours.run([ids[3], today, '08:30', '16:30']);
+  insertHours.run([ids[4], today, '09:00', '18:00']);
+  insertHours.run([ids[5], today, '07:00', '15:00']);
+  insertHours.run([ids[6], today, '09:00', '17:00']);
+  insertHours.run([ids[7], today, '10:00', '19:00']);
 }
 
 module.exports = db;
