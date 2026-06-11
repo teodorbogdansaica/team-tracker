@@ -5,6 +5,11 @@ const fs   = require('fs');
 const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
+// Remove stale lock directory left by a crashed process. Safe on Railway
+// because only one replica ever runs against this volume.
+const lockDir = path.join(dataDir, 'tracker.db.lock');
+if (fs.existsSync(lockDir)) fs.rmSync(lockDir, { recursive: true, force: true });
+
 const db = new Database(path.join(dataDir, 'tracker.db'));
 
 db.exec(`

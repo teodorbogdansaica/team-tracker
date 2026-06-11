@@ -47,6 +47,9 @@ function requireAdmin(req, res, next) {
   res.status(403).json({ error: 'Admin required' });
 }
 
+// ── Healthcheck (must be before requireAuth) ───────────────
+app.get('/health', (req, res) => res.json({ ok: true }));
+
 // ── Public: static login assets ───────────────────────────
 app.use('/login', express.static(path.join(__dirname, 'public')));
 app.get('/login', (req, res) => {
