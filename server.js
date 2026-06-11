@@ -46,8 +46,6 @@ function requireAdmin(req, res, next) {
 // ── Healthcheck (must be before requireAuth) ───────────────
 app.get('/health', (req, res) => res.json({ ok: true }));
 
-// ── Public: static login assets ───────────────────────────
-app.use('/login', express.static(path.join(__dirname, 'public')));
 app.get('/login', (req, res) => {
   if (req.session.userId) return res.redirect('/');
   res.sendFile(path.join(__dirname, 'public', 'login.html'));
