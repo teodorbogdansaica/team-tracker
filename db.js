@@ -7,7 +7,12 @@ if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
 // Remove stale lock directory left by a crashed process. Safe on Railway
 // because only one replica ever runs against this volume.
+<<<<<<< HEAD
 const lockDir = path.join(dataDir, 'tracker.db.lock');
+=======
+const dbPath  = path.join(dataDir, 'tracker.db');
+const lockDir = dbPath + '.lock';
+>>>>>>> e764e23 (resolve merge conflict in db.js)
 if (fs.existsSync(lockDir)) fs.rmSync(lockDir, { recursive: true, force: true });
 
 const db = new Database(path.join(dataDir, 'tracker.db'));
