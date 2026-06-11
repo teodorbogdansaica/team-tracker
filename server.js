@@ -4,16 +4,12 @@ const bcrypt    = require('bcryptjs');
 const path      = require('path');
 const db        = require('./db');
 
-const FileStore = require('session-file-store')(session);
 const app  = express();
 const PORT = process.env.PORT || 3000;
-
-const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 
 // ── Session ────────────────────────────────────────────────
 app.use(express.json());
 app.use(session({
-  store: new FileStore({ path: path.join(dataDir, 'sessions'), retries: 1, logFn: () => {} }),
   secret: process.env.SESSION_SECRET || 'change-me-in-production',
   resave: false,
   saveUninitialized: false,
