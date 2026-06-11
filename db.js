@@ -5,7 +5,16 @@ const fs   = require('fs');
 const dataDir = process.env.RAILWAY_VOLUME_MOUNT_PATH || path.join(__dirname, 'data');
 if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
 
-const db = new Database(path.join(dataDir, 'tracker.db'));
+// Clean up stale SQLite lock directory left by a previous crash.
+// node-sqlite3-wasm uses fs.mkdirSync('<db>.lock') for locking, which is
+// not cleaned up on crash. Safe to remove because Railway runs a single replica.
+const dbPath = path.join(dataDir, 'tracker.db');
+const lockPath = dbPath + '.lock';
+if (fs.existsSync(lockPath)) {
+  try { fs.rmdirSync(lockPath); } catch (_) {}
+}
+
+const db = new Database(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
