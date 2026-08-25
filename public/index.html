@@ -192,6 +192,13 @@
 
   <!-- ADMIN -->
   <div class="page" id="page-admin">
+    <div class="admin-section" style="margin-bottom:24px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <h3 style="border:none;margin:0;padding:0">Bob Sync</h3>
+        <button class="btn btn-primary" id="syncNowBtn" onclick="requestSync()">Sync Now</button>
+      </div>
+      <div id="syncStatusText" style="font-size:0.85rem;color:var(--text-dim)"></div>
+    </div>
     <div class="admin-section">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
         <h3 style="border:none;margin:0;padding:0">Users</h3>
@@ -341,6 +348,28 @@ async function api(method, url, body) {
   return res.json();
 }
 
+// ── Bob sync ───────────────────────────────────────────────
+async function loadSyncStatus() {
+  const s = await api('GET', '/api/admin/sync/status');
+  if (!s) return;
+  const btn = document.getElementById('syncNowBtn');
+  const text = document.getElementById('syncStatusText');
+  if (s.pending) {
+    btn.disabled = true; btn.textContent = 'Sync pending…';
+    text.textContent = `Sync requested at ${new Date(s.requested_at).toLocaleString()} — waiting for the scheduled job to pick it up (checks every few minutes).`;
+  } else {
+    btn.disabled = false; btn.textContent = 'Sync Now';
+    text.textContent = s.last_synced_at
+      ? `Last synced: ${new Date(s.last_synced_at).toLocaleString()}${s.last_result ? ' — ' + s.last_result : ''}`
+      : 'Never synced yet.';
+  }
+}
+async function requestSync() {
+  await api('POST', '/api/admin/sync/request');
+  toast('Sync requested — it will run within a few minutes.');
+  loadSyncStatus();
+}
+
 // ── Auth ───────────────────────────────────────────────────
 async function logout() {
   await api('POST', '/api/auth/logout');
@@ -374,7 +403,7 @@ function switchTab(name) {
   document.getElementById('page-' + name).classList.add('active');
   if (name === 'hours') renderHours();
   if (name === 'team')  loadAndRenderTeam();
-  if (name === 'admin') renderUsers();
+  if (name === 'admin') { renderUsers(); loadSyncStatus(); }
 }
 
 // ── Clock ──────────────────────────────────────────────────

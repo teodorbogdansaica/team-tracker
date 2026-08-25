@@ -49,7 +49,19 @@ db.exec(`
     UNIQUE(member_id, date),
     FOREIGN KEY(member_id) REFERENCES members(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS sync_state (
+    id            INTEGER PRIMARY KEY CHECK (id = 1),
+    pending       INTEGER NOT NULL DEFAULT 0,
+    requested_at  TEXT,
+    last_synced_at TEXT,
+    last_result   TEXT
+  );
 `);
+
+if (db.prepare('SELECT COUNT(*) as c FROM sync_state').get().c === 0) {
+  db.prepare('INSERT INTO sync_state (id, pending) VALUES (1, 0)').run();
+}
 
 // Seed demo members if empty
 const count = db.prepare('SELECT COUNT(*) as c FROM members').get();

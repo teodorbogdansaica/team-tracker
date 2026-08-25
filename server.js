@@ -199,6 +199,24 @@ app.delete('/api/hours', (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Bob sync trigger ───────────────────────────────────────
+app.get('/api/admin/sync/status', requireAdmin, (req, res) => {
+  res.json(db.prepare('SELECT pending, requested_at, last_synced_at, last_result FROM sync_state WHERE id = 1').get());
+});
+
+app.post('/api/admin/sync/request', requireAdmin, (req, res) => {
+  db.prepare('UPDATE sync_state SET pending = 1, requested_at = ? WHERE id = 1')
+    .run([new Date().toISOString()]);
+  res.json({ ok: true });
+});
+
+app.post('/api/admin/sync/complete', requireAdmin, (req, res) => {
+  const { result } = req.body;
+  db.prepare('UPDATE sync_state SET pending = 0, last_synced_at = ?, last_result = ? WHERE id = 1')
+    .run([new Date().toISOString(), result || null]);
+  res.json({ ok: true });
+});
+
 // ── Fallback ───────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
