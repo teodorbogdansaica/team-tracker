@@ -1,106 +1,335 @@
 {
   "employees": [
-    {"code":"CP","id":"3525776626325389832","name":"Corrado Pettene","country":"Italy"},
-    {"code":"GM","id":"3037429387310924049","name":"Giuseppe Margiotta","country":"Italy"},
-    {"code":"IB","id":"3277980588002247074","name":"Ivan Bozhko","country":"Czech Republic"},
-    {"code":"MD","id":"3458326404121232292","name":"Marian Dumitrascu","country":"Romania"},
-    {"code":"MC","id":"3663496451238920689","name":"Michael Dahis","country":"Israel"},
-    {"code":"PR","id":"3292472785544152047","name":"Pedro Rocha","country":"Poland"},
-    {"code":"SK","id":"3533667942073893185","name":"Shahaf Kounio","country":"Israel"},
-    {"code":"SR","id":"3374327563068375056","name":"Stas Revva","country":"Israel"},
-    {"code":"SE","id":"3632192053779104631","name":"Stefan Enache","country":"Romania"},
-    {"code":"TZ","id":"3545214511138996778","name":"Teodor Zotescu","country":"Romania"},
-    {"code":"VB","id":"3543931750671450723","name":"Vlad Brindusescu","country":"Romania"}
+    {
+      "code": "CP",
+      "id": "3525776626325389832",
+      "name": "Corrado Pettene",
+      "country": "Italy"
+    },
+    {
+      "code": "GM",
+      "id": "3037429387310924049",
+      "name": "Giuseppe Margiotta",
+      "country": "Italy"
+    },
+    {
+      "code": "IB",
+      "id": "3277980588002247074",
+      "name": "Ivan Bozhko",
+      "country": "Czech Republic"
+    },
+    {
+      "code": "MD",
+      "id": "3458326404121232292",
+      "name": "Marian Dumitrascu",
+      "country": "Romania"
+    },
+    {
+      "code": "MC",
+      "id": "3663496451238920689",
+      "name": "Michael Dahis",
+      "country": "Israel"
+    },
+    {
+      "code": "PR",
+      "id": "3292472785544152047",
+      "name": "Pedro Rocha",
+      "country": "Poland"
+    },
+    {
+      "code": "SK",
+      "id": "3533667942073893185",
+      "name": "Shahaf Kounio",
+      "country": "Israel"
+    },
+    {
+      "code": "SR",
+      "id": "3374327563068375056",
+      "name": "Stas Revva",
+      "country": "Israel"
+    },
+    {
+      "code": "SE",
+      "id": "3632192053779104631",
+      "name": "Stefan Enache",
+      "country": "Romania"
+    },
+    {
+      "code": "TZ",
+      "id": "3545214511138996778",
+      "name": "Teodor Zotescu",
+      "country": "Romania"
+    },
+    {
+      "code": "VB",
+      "id": "3543931750671450723",
+      "name": "Vlad Brindusescu",
+      "country": "Romania"
+    }
   ],
   "requests": [
-    {"code":"IB","type":"S","start":"2026-08-04","end":"2026-08-05"},
-    {"code":"SR","type":"S","start":"2026-08-04","end":"2026-08-04"},
-    {"code":"SR","type":"S","start":"2026-08-12","end":"2026-08-12"},
-    {"code":"SR","type":"S","start":"2026-08-13","end":"2026-08-13"},
-    {"code":"SK","type":"S","start":"2026-06-18","end":"2026-06-18"},
-    {"code":"SK","type":"S","start":"2026-06-24","end":"2026-06-24"},
-    {"code":"SK","type":"S","start":"2026-07-13","end":"2026-07-13"},
-    {"code":"SK","type":"S","start":"2026-07-16","end":"2026-07-16"},
-    {"code":"MC","type":"S","start":"2026-06-01","end":"2026-06-01"},
-    {"code":"SR","type":"V","start":"2026-08-16","end":"2026-08-25"},
-    {"code":"SK","type":"V","start":"2026-07-02","end":"2026-07-05"},
-    {"code":"SK","type":"V","start":"2026-07-06","end":"2026-07-06"},
-    {"code":"MC","type":"V","start":"2026-06-08","end":"2026-06-08"},
-    {"code":"MC","type":"V","start":"2026-06-30","end":"2026-06-30"},
-    {"code":"MC","type":"V","start":"2026-07-23","end":"2026-07-23"},
-    {"code":"MC","type":"V","start":"2026-08-20","end":"2026-08-20"},
-    {"code":"MC","type":"V","start":"2026-08-24","end":"2026-08-27"},
-    {"code":"GM","type":"VR","start":"2026-06-01","end":"2026-06-01"},
-    {"code":"GM","type":"VR","start":"2026-06-11","end":"2026-06-12"},
-    {"code":"GM","type":"VR","start":"2026-07-13","end":"2026-07-17"},
-    {"code":"GM","type":"VR","start":"2026-08-07","end":"2026-08-14"},
-    {"code":"GM","type":"VR","start":"2026-08-24","end":"2026-08-26"},
-    {"code":"GM","type":"VR","start":"2026-09-02","end":"2026-09-02"},
-    {"code":"IB","type":"VR","start":"2026-06-15","end":"2026-06-18"},
-    {"code":"IB","type":"VR","start":"2026-07-02","end":"2026-07-03"},
-    {"code":"IB","type":"VR","start":"2026-08-17","end":"2026-08-24"},
-    {"code":"PR","type":"VR","start":"2026-06-26","end":"2026-06-26"},
-    {"code":"PR","type":"VR","start":"2026-06-29","end":"2026-06-29"},
-    {"code":"PR","type":"VR","start":"2026-07-01","end":"2026-07-15"},
-    {"code":"PR","type":"VR","start":"2026-08-19","end":"2026-08-19"},
-    {"code":"PR","type":"VR","start":"2026-08-26","end":"2026-08-26"},
-    {"code":"MD","type":"VR","start":"2026-08-03","end":"2026-08-07"},
-    {"code":"CP","type":"VR","start":"2026-08-10","end":"2026-08-21"},
-    {"code":"VB","type":"VR","start":"2026-07-15","end":"2026-07-22"},
-    {"code":"VB","type":"VR","start":"2026-08-14","end":"2026-08-17"},
-    {"code":"TZ","type":"VR","start":"2026-07-20","end":"2026-07-20"},
-    {"code":"SE","type":"VR","start":"2026-06-22","end":"2026-06-22"},
-    {"code":"SE","type":"VR","start":"2026-08-03","end":"2026-08-03"},
-    {"code":"SE","type":"VR","start":"2026-08-27","end":"2026-08-28"},
-    {"code":"SE","type":"VR","start":"2026-08-31","end":"2026-09-01"},
-    {"code":"PR","type":"PD","start":"2026-06-05","end":"2026-06-05"},
-    {"code":"PR","type":"PD","start":"2026-08-20","end":"2026-08-25"},
-    {"code":"MD","type":"PD","start":"2026-07-23","end":"2026-07-24"},
-    {"code":"SK","type":"PD","start":"2026-06-11","end":"2026-06-11"},
-    {"code":"SK","type":"PD","start":"2026-08-17","end":"2026-08-17"},
-    {"code":"VB","type":"PD","start":"2026-07-07","end":"2026-07-07"},
-    {"code":"VB","type":"PD","start":"2026-08-12","end":"2026-08-13"},
-    {"code":"GM","type":"Other Leave","start":"2026-08-03","end":"2026-08-03"},
-    {"code":"PR","type":"Other Leave","start":"2026-08-14","end":"2026-08-14"},
-    {"code":"MD","type":"Other Leave","start":"2026-06-26","end":"2026-06-26"},
-    {"code":"TZ","type":"Romania special sick leave","start":"2026-07-22","end":"2026-07-22"}
+    {
+      "code": "IB",
+      "type": "S",
+      "start": "2026-09-08",
+      "end": "2026-09-10"
+    },
+    {
+      "code": "SR",
+      "type": "V",
+      "start": "2026-08-16",
+      "end": "2026-08-25"
+    },
+    {
+      "code": "SK",
+      "type": "V",
+      "start": "2026-08-27",
+      "end": "2026-08-27"
+    },
+    {
+      "code": "MC",
+      "type": "V",
+      "start": "2026-08-20",
+      "end": "2026-08-20"
+    },
+    {
+      "code": "MC",
+      "type": "V",
+      "start": "2026-08-24",
+      "end": "2026-08-27"
+    },
+    {
+      "code": "GM",
+      "type": "VR",
+      "start": "2026-08-24",
+      "end": "2026-08-26"
+    },
+    {
+      "code": "GM",
+      "type": "VR",
+      "start": "2026-09-02",
+      "end": "2026-09-02"
+    },
+    {
+      "code": "IB",
+      "type": "VR",
+      "start": "2026-08-17",
+      "end": "2026-08-24"
+    },
+    {
+      "code": "PR",
+      "type": "VR",
+      "start": "2026-08-19",
+      "end": "2026-08-19"
+    },
+    {
+      "code": "PR",
+      "type": "VR",
+      "start": "2026-08-26",
+      "end": "2026-08-26"
+    },
+    {
+      "code": "CP",
+      "type": "VR",
+      "start": "2026-08-10",
+      "end": "2026-08-21"
+    },
+    {
+      "code": "VB",
+      "type": "VR",
+      "start": "2026-09-18",
+      "end": "2026-09-22"
+    },
+    {
+      "code": "SE",
+      "type": "VR",
+      "start": "2026-08-27",
+      "end": "2026-08-28"
+    },
+    {
+      "code": "SE",
+      "type": "VR",
+      "start": "2026-08-31",
+      "end": "2026-09-01"
+    },
+    {
+      "code": "PR",
+      "type": "PD",
+      "start": "2026-08-20",
+      "end": "2026-08-25"
+    },
+    {
+      "code": "SE",
+      "type": "PD",
+      "start": "2026-09-02",
+      "end": "2026-09-02"
+    },
+    {
+      "code": "MD",
+      "type": "Romania special sick leave",
+      "start": "2026-08-25",
+      "end": "2026-08-25"
+    }
   ],
   "holidays": [
-    {"date":"2026-06-01","name":"Children's Day","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-06-01","name":"Orthodox Pentecost Monday","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-06-02","name":"Republic Day","codes":["CP","GM"]},
-    {"date":"2026-06-04","name":"Corpus Christi","codes":["PR"]},
-    {"date":"2026-07-05","name":"Day of Saints Cyril and Methodius","codes":["IB"]},
-    {"date":"2026-07-06","name":"Jan Hus Day","codes":["IB"]},
-    {"date":"2026-08-15","name":"Assumption of Mary","codes":["PR"]},
-    {"date":"2026-08-15","name":"Assumption of Mary","codes":["CP","GM"]},
-    {"date":"2026-08-15","name":"St Mary's Day","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-09-11","name":"Rosh Hashana Eve","codes":["MC","SK","SR"]},
-    {"date":"2026-09-12","name":"Rosh Hashana","codes":["MC","SK","SR"]},
-    {"date":"2026-09-13","name":"Rosh Hashana (Day 2)","codes":["MC","SK","SR"]},
-    {"date":"2026-09-20","name":"Yom Kippur Eve","codes":["MC","SK","SR"]},
-    {"date":"2026-09-21","name":"Yom Kippur","codes":["MC","SK","SR"]},
-    {"date":"2026-09-25","name":"Sukkot Eve","codes":["MC","SK","SR"]},
-    {"date":"2026-09-26","name":"Sukkot (Day 1)","codes":["MC","SK","SR"]},
-    {"date":"2026-09-28","name":"St. Wenceslas Day","codes":["IB"]},
-    {"date":"2026-10-02","name":"Sukkot (Day 7) / Hoshanah Rabah","codes":["MC","SK","SR"]},
-    {"date":"2026-10-03","name":"Shemini Atzeret / Simchat Torah","codes":["MC","SK","SR"]},
-    {"date":"2026-10-28","name":"Independent Czechoslovak State Day","codes":["IB"]},
-    {"date":"2026-11-01","name":"All Saints' Day","codes":["PR"]},
-    {"date":"2026-11-01","name":"All Saints' Day","codes":["CP","GM"]},
-    {"date":"2026-11-11","name":"Independence Day","codes":["PR"]},
-    {"date":"2026-11-17","name":"Struggle for Freedom and Democracy Day","codes":["IB"]},
-    {"date":"2026-11-30","name":"St Andrew's Day","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-12-01","name":"National Day","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-12-08","name":"Feast of the Immaculate Conception","codes":["CP","GM"]},
-    {"date":"2026-12-24","name":"Christmas Eve","codes":["IB"]},
-    {"date":"2026-12-25","name":"Christmas Day","codes":["CP","GM"]},
-    {"date":"2026-12-25","name":"Christmas Day","codes":["IB"]},
-    {"date":"2026-12-25","name":"Christmas Day","codes":["PR"]},
-    {"date":"2026-12-25","name":"Christmas Day","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-12-26","name":"St. Stephen's Day","codes":["IB"]},
-    {"date":"2026-12-26","name":"Second day of Christmas","codes":["MD","VB","TZ","SE"]},
-    {"date":"2026-12-26","name":"St. Stephen's Day","codes":["CP","GM"]},
-    {"date":"2026-12-26","name":"Second Day of Christmas","codes":["PR"]}
+    {
+      "date": "2026-09-11",
+      "name": "Rosh Hashana Eve",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-12",
+      "name": "Rosh Hashana",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-13",
+      "name": "Rosh Hashana (Day 2)",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-20",
+      "name": "Yom Kippur Eve",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-21",
+      "name": "Yom Kippur",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-25",
+      "name": "Sukkot Eve",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-26",
+      "name": "Sukkot (Day 1)",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-09-28",
+      "name": "St. Wenceslas Day",
+      "codes": [
+        "IB"
+      ]
+    },
+    {
+      "date": "2026-10-02",
+      "name": "Sukkot (Day 7) / Hoshanah Rabah",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-10-03",
+      "name": "Shemini Atzeret / Simchat Torah",
+      "codes": [
+        "MC",
+        "SK",
+        "SR"
+      ]
+    },
+    {
+      "date": "2026-10-28",
+      "name": "Independent Czechoslovak State Day",
+      "codes": [
+        "IB"
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "name": "All Saints' Day",
+      "codes": [
+        "PR"
+      ]
+    },
+    {
+      "date": "2026-11-01",
+      "name": "All Saints' Day",
+      "codes": [
+        "CP",
+        "GM"
+      ]
+    },
+    {
+      "date": "2026-11-11",
+      "name": "Independence Day",
+      "codes": [
+        "PR"
+      ]
+    },
+    {
+      "date": "2026-11-17",
+      "name": "Struggle for Freedom and Democracy Day",
+      "codes": [
+        "IB"
+      ]
+    },
+    {
+      "date": "2026-11-30",
+      "name": "St Andrew's Day",
+      "codes": [
+        "MD",
+        "VB",
+        "TZ",
+        "SE"
+      ]
+    },
+    {
+      "date": "2026-12-01",
+      "name": "National Day",
+      "codes": [
+        "MD",
+        "VB",
+        "TZ",
+        "SE"
+      ]
+    },
+    {
+      "date": "2026-12-08",
+      "name": "Feast of the Immaculate Conception",
+      "codes": [
+        "CP",
+        "GM"
+      ]
+    },
+    {
+      "date": "2026-12-24",
+      "name": "Christmas Eve",
+      "codes": [
+        "IB"
+      ]
+    }
   ]
 }

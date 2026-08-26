@@ -356,7 +356,7 @@ async function loadSyncStatus() {
   const text = document.getElementById('syncStatusText');
   if (s.pending) {
     btn.disabled = true; btn.textContent = 'Sync pending…';
-    text.textContent = `Sync requested at ${new Date(s.requested_at).toLocaleString()} — waiting for the scheduled job to pick it up (checks every few minutes).`;
+    text.textContent = `Sync requested at ${new Date(s.requested_at).toLocaleString()} — will run next time the sync job checks (only while Claude Code is open; may take a while otherwise).`;
   } else {
     btn.disabled = false; btn.textContent = 'Sync Now';
     text.textContent = s.last_synced_at
