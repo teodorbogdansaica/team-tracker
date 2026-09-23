@@ -127,6 +127,19 @@
     .hours-date-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
     .hours-date-bar label { font-size: 0.85rem; color: var(--text-dim); }
     .hours-date-bar input { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-radius: 6px; padding: 6px 10px; font-size: 0.85rem; }
+
+    /* Reports */
+    .report-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .report-card:hover { background: var(--surface2); }
+    .report-card .rc-title { font-weight: 600; font-size: 0.95rem; }
+    .report-card .rc-meta { font-size: 0.78rem; color: var(--text-dim); margin-top: 4px; }
+    .report-empty { color: var(--text-dim); font-size: 0.88rem; padding: 20px 0; }
+    .report-summary-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-bottom: 8px; }
+    .summary-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+    .summary-card .sc-label { font-size: 0.7rem; color: var(--text-dim); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .03em; }
+    .summary-card .sc-value { font-size: 1.25rem; font-weight: 700; }
+    .report-table-wrap { overflow-x: auto; }
+    #reportTable { min-width: 1400px; }
   </style>
 </head>
 <body>
@@ -146,6 +159,7 @@
   <button class="tab" data-tab="team" onclick="switchTab('team')">Team</button>
   <button class="tab" data-tab="hours" onclick="switchTab('hours')">Working Hours</button>
   <button class="tab" data-tab="admin" id="adminTab" style="display:none" onclick="switchTab('admin')">Admin</button>
+  <button class="tab" data-tab="reports" onclick="switchTab('reports')">Team Reports</button>
 </div>
 
 <div class="main">
@@ -208,6 +222,37 @@
         <thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr></thead>
         <tbody id="usersBody"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- TEAM REPORTS -->
+  <div class="page" id="page-reports">
+    <div id="reportsListView">
+      <h3 style="margin-bottom:16px">Team Reports</h3>
+      <div id="reportsList"></div>
+    </div>
+    <div id="reportDetailView" style="display:none">
+      <button class="btn btn-ghost btn-sm" onclick="backToReportsList()">‹ Back to reports</button>
+      <h2 id="reportDetailTitle" style="margin:16px 0 4px"></h2>
+      <div id="reportDetailPeriod" style="color:var(--text-dim);font-size:0.85rem;margin-bottom:22px"></div>
+
+      <h3 style="margin-bottom:12px">Team Summary (Averages)</h3>
+      <div class="report-summary-grid" id="reportSummaryGrid"></div>
+
+      <h3 style="margin:28px 0 12px">Per-Employee Data</h3>
+      <div class="report-table-wrap">
+        <table class="users-table" id="reportTable">
+          <thead>
+            <tr>
+              <th>Employee</th><th>Vacation</th><th>PD On-Call</th><th>Sick</th><th>Public Holidays</th>
+              <th>Days working on tasks</th><th>Description of Task</th><th>Number of oncalls</th>
+              <th>Convos</th><th>CSAT</th><th>Median TTR</th><th>CES</th><th>Sentiment</th>
+              <th>Effective Working Days in Intercom</th><th>Per shift intercom solved</th>
+            </tr>
+          </thead>
+          <tbody id="reportTableBody"></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -370,6 +415,68 @@ async function requestSync() {
   loadSyncStatus();
 }
 
+// ── Team Reports ───────────────────────────────────────────
+function fmtDate(iso) {
+  return new Date(iso + 'T00:00:00Z').toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'UTC' });
+}
+function showReportsList() {
+  document.getElementById('reportsListView').style.display = '';
+  document.getElementById('reportDetailView').style.display = 'none';
+}
+async function loadReportsList() {
+  const reports = await api('GET', '/api/reports');
+  const list = document.getElementById('reportsList');
+  if (!reports || !reports.length) {
+    list.innerHTML = '<div class="report-empty">No reports yet.</div>';
+    return;
+  }
+  list.innerHTML = reports.map(r => `
+    <div class="report-card" onclick="openReport(${r.id})">
+      <div>
+        <div class="rc-title">${r.label}</div>
+        <div class="rc-meta">${fmtDate(r.period_start)} – ${fmtDate(r.period_end)} · created ${new Date(r.created_at).toLocaleDateString()}</div>
+      </div>
+      ${currentUser.isAdmin ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteReport(${r.id})">Delete</button>` : ''}
+    </div>
+  `).join('');
+}
+async function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  await api('DELETE', `/api/reports/${id}`);
+  loadReportsList();
+}
+function dash(v) { return (v === null || v === undefined || v === '' || v === 0) ? '—' : v; }
+async function openReport(id) {
+  const report = await api('GET', `/api/reports/${id}`);
+  if (!report) return;
+  document.getElementById('reportsListView').style.display = 'none';
+  document.getElementById('reportDetailView').style.display = '';
+  document.getElementById('reportDetailTitle').textContent = report.label;
+  document.getElementById('reportDetailPeriod').textContent = `${fmtDate(report.period_start)} – ${fmtDate(report.period_end)}`;
+
+  const s = report.data.summary;
+  const summaryCards = [
+    ['Avg Vacation', s.vacation], ['Avg PD On-Call', s.pd_oncall], ['Avg Sick', s.sick],
+    ['Avg Public Holidays', s.public_holidays], ['Avg Task Days', s.task_days], ['Avg Oncalls', s.oncalls],
+    ['Avg Convos', s.convos], ['Avg CSAT', s.csat], ['Avg Median TTR', s.median_ttr],
+    ['Avg CES', s.ces], ['Avg Sentiment', s.sentiment], ['Avg Effective Working Days', s.effective_working_days],
+    ['Avg Per Shift Solved', s.per_shift_solved]
+  ];
+  document.getElementById('reportSummaryGrid').innerHTML = summaryCards.map(([label, value]) => `
+    <div class="summary-card"><div class="sc-label">${label}</div><div class="sc-value">${value}</div></div>
+  `).join('');
+
+  document.getElementById('reportTableBody').innerHTML = report.data.rows.map(r => `
+    <tr>
+      <td>${r.employee}</td><td>${r.vacation}</td><td>${r.pd_oncall}</td><td>${r.sick}</td><td>${r.public_holidays}</td>
+      <td>${dash(r.task_days)}</td><td>${dash(r.task_description)}</td><td>${r.oncalls}</td>
+      <td>${r.convos}</td><td>${r.csat}</td><td>${r.median_ttr}</td><td>${r.ces}</td><td>${r.sentiment}</td>
+      <td>${r.effective_working_days}</td><td>${r.per_shift_solved}</td>
+    </tr>
+  `).join('');
+}
+function backToReportsList() { showReportsList(); }
+
 // ── Auth ───────────────────────────────────────────────────
 async function logout() {
   await api('POST', '/api/auth/logout');
@@ -404,6 +511,7 @@ function switchTab(name) {
   if (name === 'hours') renderHours();
   if (name === 'team')  loadAndRenderTeam();
   if (name === 'admin') { renderUsers(); loadSyncStatus(); }
+  if (name === 'reports') { showReportsList(); loadReportsList(); }
 }
 
 // ── Clock ──────────────────────────────────────────────────

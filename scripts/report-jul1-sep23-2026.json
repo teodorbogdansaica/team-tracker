@@ -1,0 +1,25 @@
+{
+  "label": "Report for period Jul 1 - Sep 23, 2026",
+  "period_start": "2026-07-01",
+  "period_end": "2026-09-23",
+  "data": {
+    "rows": [
+      {"employee":"Corrado Pettene","vacation":12,"pd_oncall":0,"sick":0,"public_holidays":0,"task_days":0,"task_description":"","oncalls":1,"convos":186,"csat":"100%","median_ttr":"1h 34m","ces":4.11,"sentiment":3.7,"effective_working_days":49.5,"per_shift_solved":3.76},
+      {"employee":"Giuseppe Margiotta","vacation":17,"pd_oncall":1,"sick":0,"public_holidays":0,"task_days":4.5,"task_description":"Onboarding preparation for Senior TSE and Onboarding","oncalls":1,"convos":104,"csat":"100%","median_ttr":"1h 39m","ces":4.13,"sentiment":3.6,"effective_working_days":39,"per_shift_solved":2.67},
+      {"employee":"Ivan Bozhko","vacation":10,"pd_oncall":0,"sick":5,"public_holidays":1,"task_days":3,"task_description":"Tide migration and Tbilisi offsite presentation preparing","oncalls":1,"convos":142,"csat":"100%","median_ttr":"1h 35m","ces":4.13,"sentiment":3.5,"effective_working_days":42.5,"per_shift_solved":3.34},
+      {"employee":"Marian Dumitrascu","vacation":5,"pd_oncall":2,"sick":0,"public_holidays":0,"task_days":0,"task_description":"","oncalls":2,"convos":116,"csat":"100%","median_ttr":"1h 8m","ces":4.25,"sentiment":3.7,"effective_working_days":55,"per_shift_solved":2.11},
+      {"employee":"Michael Dahis","vacation":6,"pd_oncall":0,"sick":0,"public_holidays":3,"task_days":0,"task_description":"","oncalls":3,"convos":215,"csat":"97.3%","median_ttr":"1h 24m","ces":4.17,"sentiment":3.4,"effective_working_days":53.5,"per_shift_solved":4.02},
+      {"employee":"Pedro Rocha","vacation":17,"pd_oncall":6,"sick":0,"public_holidays":0,"task_days":0,"task_description":"","oncalls":1,"convos":162,"csat":"100%","median_ttr":"1h 32m","ces":4.22,"sentiment":3.8,"effective_working_days":38.5,"per_shift_solved":4.21},
+      {"employee":"Shahaf Kounio","vacation":14,"pd_oncall":1,"sick":3,"public_holidays":3,"task_days":1,"task_description":"Customer meeting with AM","oncalls":0,"convos":127,"csat":"100%","median_ttr":"1h 18m","ces":4.10,"sentiment":3.6,"effective_working_days":39,"per_shift_solved":3.26},
+      {"employee":"Stas Revva","vacation":10,"pd_oncall":0,"sick":3,"public_holidays":3,"task_days":0,"task_description":"","oncalls":3,"convos":122,"csat":"88.5%","median_ttr":"24m","ces":4.15,"sentiment":3.5,"effective_working_days":46.5,"per_shift_solved":2.62},
+      {"employee":"Stefan Enache","vacation":5,"pd_oncall":1,"sick":0,"public_holidays":0,"task_days":2.5,"task_description":"Tide Migration and QRT validation","oncalls":0,"convos":176,"csat":"100%","median_ttr":"1h 11m","ces":4.23,"sentiment":3.6,"effective_working_days":52.5,"per_shift_solved":3.35},
+      {"employee":"Teodor Zotescu","vacation":1,"pd_oncall":0,"sick":0,"public_holidays":0,"task_days":1,"task_description":"Tbilisi offsite presentation preparing","oncalls":0,"convos":183,"csat":"89.7%","median_ttr":"1h 10m","ces":4.17,"sentiment":3.7,"effective_working_days":59,"per_shift_solved":3.10},
+      {"employee":"Vlad Brindusescu","vacation":21,"pd_oncall":0,"sick":0,"public_holidays":0,"task_days":0,"task_description":"","oncalls":0,"convos":57,"csat":"91.7%","median_ttr":"1h 44m","ces":4.14,"sentiment":3.6,"effective_working_days":40,"per_shift_solved":1.43}
+    ],
+    "summary": {
+      "vacation":10.73,"pd_oncall":1.00,"sick":1.00,"public_holidays":0.91,"task_days":1.09,"oncalls":1.09,
+      "convos":144.55,"csat":"97.02%","median_ttr":"1h 20m","ces":4.16,"sentiment":3.61,
+      "effective_working_days":46.82,"per_shift_solved":3.08
+    }
+  }
+}

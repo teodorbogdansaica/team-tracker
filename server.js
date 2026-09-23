@@ -217,6 +217,33 @@ app.post('/api/admin/sync/complete', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Team reports ───────────────────────────────────────────
+app.get('/api/reports', requireAuth, (req, res) => {
+  res.json(db.prepare('SELECT id, label, period_start, period_end, created_at FROM reports ORDER BY period_start DESC').all());
+});
+
+app.get('/api/reports/:id', requireAuth, (req, res) => {
+  const row = db.prepare('SELECT * FROM reports WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Not found' });
+  res.json({ ...row, data: JSON.parse(row.data) });
+});
+
+app.post('/api/reports', requireAdmin, (req, res) => {
+  const { label, period_start, period_end, data } = req.body;
+  if (!label || !period_start || !period_end || !data)
+    return res.status(400).json({ error: 'Missing fields' });
+  db.prepare(
+    'INSERT INTO reports (label, period_start, period_end, data) VALUES (?, ?, ?, ?)'
+  ).run([label, period_start, period_end, JSON.stringify(data)]);
+  const id = db.prepare('SELECT last_insert_rowid() as id').get().id;
+  res.json({ id });
+});
+
+app.delete('/api/reports/:id', requireAdmin, (req, res) => {
+  db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
+  res.json({ ok: true });
+});
+
 // ── Fallback ───────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

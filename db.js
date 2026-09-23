@@ -57,6 +57,15 @@ db.exec(`
     last_synced_at TEXT,
     last_result   TEXT
   );
+
+  CREATE TABLE IF NOT EXISTS reports (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    label         TEXT NOT NULL,
+    period_start  TEXT NOT NULL,
+    period_end    TEXT NOT NULL,
+    data          TEXT NOT NULL,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 if (db.prepare('SELECT COUNT(*) as c FROM sync_state').get().c === 0) {
