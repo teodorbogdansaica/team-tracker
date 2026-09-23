@@ -239,6 +239,14 @@ app.post('/api/reports', requireAdmin, (req, res) => {
   res.json({ id });
 });
 
+app.put('/api/reports/:id', requireAdmin, (req, res) => {
+  const existing = db.prepare('SELECT * FROM reports WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  const merged = { ...JSON.parse(existing.data), ...req.body.data };
+  db.prepare('UPDATE reports SET data = ? WHERE id = ?').run([JSON.stringify(merged), req.params.id]);
+  res.json({ ok: true });
+});
+
 app.delete('/api/reports/:id', requireAdmin, (req, res) => {
   db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
   res.json({ ok: true });

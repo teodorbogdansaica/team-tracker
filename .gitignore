@@ -2,3 +2,5 @@ node_modules/
 data/
 *.db
 .env
+scripts/intercom-reviews-raw.json
+scripts/reviews-classified.json

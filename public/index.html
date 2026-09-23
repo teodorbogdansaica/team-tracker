@@ -140,6 +140,15 @@
     .summary-card .sc-value { font-size: 1.25rem; font-weight: 700; }
     .report-table-wrap { overflow-x: auto; }
     #reportTable { min-width: 1400px; }
+    .review-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; margin-bottom: 10px; }
+    .review-card.amazing { border-left: 3px solid #6BBF6A; }
+    .review-card.terrible { border-left: 3px solid #E56B6F; }
+    .review-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 0.85rem; }
+    .review-employee { font-weight: 600; }
+    .review-meta { color: var(--text-dim); font-size: 0.78rem; }
+    .review-remark { font-size: 0.88rem; color: var(--text); font-style: italic; margin-bottom: 8px; white-space: pre-wrap; }
+    .review-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; }
+    .review-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -252,6 +261,13 @@
           </thead>
           <tbody id="reportTableBody"></tbody>
         </table>
+      </div>
+
+      <div id="reportReviewsSection" style="display:none">
+        <h3 style="margin:28px 0 12px">🌟 Amazing Reviews</h3>
+        <div id="reportAmazingReviews"></div>
+        <h3 style="margin:28px 0 12px">⚠️ Terrible Reviews</h3>
+        <div id="reportTerribleReviews"></div>
       </div>
     </div>
   </div>
@@ -473,6 +489,32 @@ async function openReport(id) {
       <td>${r.convos}</td><td>${r.csat}</td><td>${r.median_ttr}</td><td>${r.ces}</td><td>${r.sentiment}</td>
       <td>${r.effective_working_days}</td><td>${r.per_shift_solved}</td>
     </tr>
+  `).join('');
+
+  const reviewsEl = document.getElementById('reportReviewsSection');
+  const reviews = report.data.reviews;
+  if (reviews && (reviews.amazing?.length || reviews.terrible?.length)) {
+    reviewsEl.style.display = '';
+    document.getElementById('reportAmazingReviews').innerHTML = renderReviews(reviews.amazing, 'amazing');
+    document.getElementById('reportTerribleReviews').innerHTML = renderReviews(reviews.terrible, 'terrible');
+  } else {
+    reviewsEl.style.display = 'none';
+  }
+}
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function renderReviews(list, kind) {
+  if (!list || !list.length) return '<div class="report-empty">None.</div>';
+  return list.map(r => `
+    <div class="review-card ${kind}">
+      <div class="review-top">
+        <span class="review-employee">${escapeHtml(r.employee)}</span>
+        <span class="review-meta">${r.rating}/5 · ${escapeHtml(r.customer) || 'unknown customer'} · ${r.date}</span>
+      </div>
+      <div class="review-remark">"${escapeHtml(r.remark)}"</div>
+      <a class="review-link" href="${r.link}" target="_blank" rel="noopener">View in Intercom →</a>
+    </div>
   `).join('');
 }
 function backToReportsList() { showReportsList(); }
