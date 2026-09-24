@@ -252,6 +252,33 @@ app.delete('/api/reports/:id', requireAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Report generation requests ──────────────────────────────
+app.get('/api/report-requests', requireAuth, (req, res) => {
+  res.json(db.prepare('SELECT * FROM report_requests ORDER BY id DESC LIMIT 10').all());
+});
+
+app.post('/api/report-requests', requireAdmin, (req, res) => {
+  const { period_start, period_end, task_notes } = req.body;
+  if (!period_start || !period_end) return res.status(400).json({ error: 'Missing period' });
+  db.prepare(
+    'INSERT INTO report_requests (period_start, period_end, task_notes) VALUES (?, ?, ?)'
+  ).run([period_start, period_end, task_notes || null]);
+  const id = db.prepare('SELECT last_insert_rowid() as id').get().id;
+  res.json({ id });
+});
+
+app.put('/api/report-requests/:id', requireAdmin, (req, res) => {
+  const { status, error, result_report_id } = req.body;
+  const existing = db.prepare('SELECT * FROM report_requests WHERE id = ?').get(req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+  db.prepare(
+    'UPDATE report_requests SET status = ?, error = ?, result_report_id = ?, completed_at = ? WHERE id = ?'
+  ).run([status || existing.status, error || null, result_report_id || null,
+         (status === 'done' || status === 'error') ? new Date().toISOString() : existing.completed_at,
+         req.params.id]);
+  res.json({ ok: true });
+});
+
 // ── Fallback ───────────────────────────────────────────────
 app.get('*', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 

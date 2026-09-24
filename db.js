@@ -66,6 +66,18 @@ db.exec(`
     data          TEXT NOT NULL,
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
+
+  CREATE TABLE IF NOT EXISTS report_requests (
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    period_start     TEXT NOT NULL,
+    period_end       TEXT NOT NULL,
+    task_notes       TEXT,
+    status           TEXT NOT NULL DEFAULT 'pending',
+    error            TEXT,
+    result_report_id INTEGER,
+    requested_at     TEXT NOT NULL DEFAULT (datetime('now')),
+    completed_at     TEXT
+  );
 `);
 
 if (db.prepare('SELECT COUNT(*) as c FROM sync_state').get().c === 0) {

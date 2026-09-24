@@ -237,7 +237,10 @@
   <!-- TEAM REPORTS -->
   <div class="page" id="page-reports">
     <div id="reportsListView">
-      <h3 style="margin-bottom:16px">Team Reports</h3>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <h3 style="margin:0">Team Reports</h3>
+        <button class="btn btn-primary" id="generateReportBtn" style="display:none" onclick="openGenerateReportModal()">+ Generate Report</button>
+      </div>
       <div id="reportsList"></div>
     </div>
     <div id="reportDetailView" style="display:none">
@@ -374,6 +377,33 @@
   </div>
 </div>
 
+<!-- MODAL: generate report -->
+<div class="modal-overlay" id="genReportModal" style="display:none" onclick="if(event.target===this)this.style.display='none'">
+  <div class="modal" style="width:520px">
+    <h3>Generate Report</h3>
+    <div class="form-row">
+      <div><label>From</label><input type="date" id="grFrom" /></div>
+      <div><label>To</label><input type="date" id="grTo" /></div>
+    </div>
+    <label>Task notes (optional)</label>
+    <textarea id="grTaskNotes" rows="4" placeholder="e.g. 6 days for Ivan Bozhko mentioning Tide migration and Tbilisi offsite presentation preparing..." style="width:100%;background:var(--surface2);border:1px solid var(--border);color:var(--text);border-radius:6px;padding:8px 10px;font-size:0.85rem;font-family:inherit;resize:vertical"></textarea>
+
+    <div style="margin-top:18px;padding:14px;background:var(--surface2);border:1px solid var(--border);border-radius:8px">
+      <div style="font-size:0.8rem;color:var(--text-dim);margin-bottom:10px;font-weight:600">Before you hit Run, make sure:</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;cursor:pointer"><input type="checkbox" class="gr-check" style="width:auto" /> You're logged into Bob (app.hibob.com) in your browser</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;cursor:pointer"><input type="checkbox" class="gr-check" style="width:auto" /> You're logged into incident.io in your browser</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;margin-bottom:8px;cursor:pointer"><input type="checkbox" class="gr-check" style="width:auto" /> You're logged into cx-analytics.lovable.app in your browser</label>
+      <label style="display:flex;align-items:center;gap:8px;font-size:0.85rem;cursor:pointer"><input type="checkbox" class="gr-check" style="width:auto" /> Claude Code is open on your Mac (the report runs in the background there — it won't run while it's closed)</label>
+    </div>
+    <div style="color:#f09497;font-size:.8rem;margin-top:8px;min-height:18px" id="grError"></div>
+
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="document.getElementById('genReportModal').style.display='none'">Cancel</button>
+      <button class="btn btn-primary" id="grRunBtn" disabled onclick="runGenerateReport()">Run</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -439,22 +469,77 @@ function showReportsList() {
   document.getElementById('reportsListView').style.display = '';
   document.getElementById('reportDetailView').style.display = 'none';
 }
+let reportsPollTimer = null;
 async function loadReportsList() {
-  const reports = await api('GET', '/api/reports');
+  const [reports, requests] = await Promise.all([
+    api('GET', '/api/reports'),
+    currentUser.isAdmin ? api('GET', '/api/report-requests') : Promise.resolve([]),
+  ]);
   const list = document.getElementById('reportsList');
-  if (!reports || !reports.length) {
-    list.innerHTML = '<div class="report-empty">No reports yet.</div>';
-    return;
-  }
-  list.innerHTML = reports.map(r => `
-    <div class="report-card" onclick="openReport(${r.id})">
+  const pending = (requests || []).filter(r => r.status === 'pending' || r.status === 'running');
+  const pendingHtml = pending.map(r => `
+    <div class="report-card" style="cursor:default;opacity:0.85">
       <div>
-        <div class="rc-title">${r.label}</div>
-        <div class="rc-meta">${fmtDate(r.period_start)} – ${fmtDate(r.period_end)} · created ${new Date(r.created_at).toLocaleDateString()}</div>
+        <div class="rc-title">⏳ Generating report for ${fmtDate(r.period_start)} – ${fmtDate(r.period_end)}…</div>
+        <div class="rc-meta">Requested ${new Date(r.requested_at).toLocaleString()} · will run next time the background job checks (needs Claude Code open)</div>
       </div>
-      ${currentUser.isAdmin ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteReport(${r.id})">Delete</button>` : ''}
     </div>
   `).join('');
+  const failed = (requests || []).filter(r => r.status === 'error').slice(0, 1);
+  const failedHtml = failed.map(r => `
+    <div class="report-card" style="cursor:default;border-left:3px solid #E56B6F">
+      <div>
+        <div class="rc-title">⚠️ Last generation failed</div>
+        <div class="rc-meta">${escapeHtml(r.error || 'Unknown error')}</div>
+      </div>
+    </div>
+  `).join('');
+
+  if (!reports?.length && !pending.length && !failed.length) {
+    list.innerHTML = '<div class="report-empty">No reports yet.</div>';
+  } else {
+    list.innerHTML = pendingHtml + failedHtml + (reports || []).map(r => `
+      <div class="report-card" onclick="openReport(${r.id})">
+        <div>
+          <div class="rc-title">${escapeHtml(r.label)}</div>
+          <div class="rc-meta">${fmtDate(r.period_start)} – ${fmtDate(r.period_end)} · created ${new Date(r.created_at).toLocaleDateString()}</div>
+        </div>
+        ${currentUser.isAdmin ? `<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); deleteReport(${r.id})">Delete</button>` : ''}
+      </div>
+    `).join('');
+  }
+
+  clearTimeout(reportsPollTimer);
+  if (pending.length) reportsPollTimer = setTimeout(loadReportsList, 15000);
+}
+function openGenerateReportModal() {
+  document.getElementById('grFrom').value = '';
+  document.getElementById('grTo').value = '';
+  document.getElementById('grTaskNotes').value = '';
+  document.getElementById('grError').textContent = '';
+  document.querySelectorAll('.gr-check').forEach(cb => cb.checked = false);
+  document.getElementById('grRunBtn').disabled = true;
+  document.getElementById('genReportModal').style.display = 'flex';
+}
+document.addEventListener('change', e => {
+  if (e.target.classList.contains('gr-check')) {
+    const all = [...document.querySelectorAll('.gr-check')];
+    document.getElementById('grRunBtn').disabled = !all.every(cb => cb.checked);
+  }
+});
+async function runGenerateReport() {
+  const from = document.getElementById('grFrom').value;
+  const to = document.getElementById('grTo').value;
+  const errEl = document.getElementById('grError');
+  if (!from || !to) { errEl.textContent = 'Pick both a from and to date.'; return; }
+  if (from > to) { errEl.textContent = '"From" must be before "To".'; return; }
+  await api('POST', '/api/report-requests', {
+    period_start: from, period_end: to,
+    task_notes: document.getElementById('grTaskNotes').value.trim() || null,
+  });
+  document.getElementById('genReportModal').style.display = 'none';
+  toast('Report queued — it will run next time the background job checks.');
+  loadReportsList();
 }
 async function deleteReport(id) {
   if (!confirm('Delete this report?')) return;
@@ -599,6 +684,7 @@ async function init() {
   if (currentUser.isAdmin) {
     document.getElementById('adminTab').style.display = '';
     document.getElementById('addMemberBtn').style.display = '';
+    document.getElementById('generateReportBtn').style.display = '';
   }
   members = await api('GET', '/api/members');
   await loadEntries();
