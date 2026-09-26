@@ -149,6 +149,12 @@
     .review-remark { font-size: 0.88rem; color: var(--text); font-style: italic; margin-bottom: 8px; white-space: pre-wrap; }
     .review-link { font-size: 0.8rem; color: var(--accent); text-decoration: none; }
     .review-link:hover { text-decoration: underline; }
+    #reportTable th { cursor: pointer; user-select: none; white-space: nowrap; }
+    #reportTable th:hover { color: var(--text); }
+    #reportTable th .sort-arrow { color: var(--accent); margin-left: 4px; }
+    .cell-badge-mvp, .cell-badge-flag { display: inline-block; padding: 1px 6px; border-radius: 99px; font-size: 0.62rem; font-weight: 700; margin-left: 6px; vertical-align: middle; white-space: nowrap; }
+    .cell-badge-mvp { background: rgba(107,191,106,0.2); color: #90d48f; }
+    .cell-badge-flag { background: rgba(229,107,111,0.2); color: #f09497; }
   </style>
 </head>
 <body>
@@ -251,16 +257,12 @@
       <h3 style="margin-bottom:12px">Team Summary (Averages)</h3>
       <div class="report-summary-grid" id="reportSummaryGrid"></div>
 
-      <h3 style="margin:28px 0 12px">Per-Employee Data</h3>
+      <h3 style="margin:28px 0 4px">Per-Employee Data</h3>
+      <div style="font-size:0.78rem;color:var(--text-dim);margin-bottom:12px">Click a column header to sort. <span class="cell-badge-mvp">MVP</span> = top 5 on that metric, <span class="cell-badge-flag">Red Flag</span> = bottom 5, among CSAT / Median TTR / CES / Sentiment / Per Shift Solved / Oncalls.</div>
       <div class="report-table-wrap">
         <table class="users-table" id="reportTable">
           <thead>
-            <tr>
-              <th>Employee</th><th>Vacation</th><th>PD On-Call</th><th>Sick</th><th>Public Holidays</th>
-              <th>Days working on tasks</th><th>Description of Task</th><th>Number of oncalls</th>
-              <th>Convos</th><th>CSAT</th><th>Median TTR</th><th>CES</th><th>Sentiment</th>
-              <th>Effective Working Days in Intercom</th><th>Per shift intercom solved</th>
-            </tr>
+            <tr id="reportTableHeadRow"></tr>
           </thead>
           <tbody id="reportTableBody"></tbody>
         </table>
@@ -547,6 +549,95 @@ async function deleteReport(id) {
   loadReportsList();
 }
 function dash(v) { return (v === null || v === undefined || v === '' || v === 0) ? '—' : v; }
+
+// ── Report table: columns, sorting, MVP/Red Flag badges ────
+const REPORT_COLUMNS = [
+  { key: 'employee', label: 'Employee', type: 'string' },
+  { key: 'vacation', label: 'Vacation', type: 'number' },
+  { key: 'pd_oncall', label: 'PD On-Call', type: 'number' },
+  { key: 'sick', label: 'Sick', type: 'number' },
+  { key: 'public_holidays', label: 'Public Holidays', type: 'number' },
+  { key: 'task_days', label: 'Days working on tasks', type: 'number' },
+  { key: 'task_description', label: 'Description of Task', type: 'string' },
+  { key: 'oncalls', label: 'Number of oncalls', type: 'number' },
+  { key: 'convos', label: 'Convos', type: 'number' },
+  { key: 'csat', label: 'CSAT', type: 'pct' },
+  { key: 'median_ttr', label: 'Median TTR', type: 'ttr' },
+  { key: 'ces', label: 'CES', type: 'number' },
+  { key: 'sentiment', label: 'Sentiment', type: 'number' },
+  { key: 'effective_working_days', label: 'Effective Working Days in Intercom', type: 'number' },
+  { key: 'per_shift_solved', label: 'Per shift intercom solved', type: 'number' },
+];
+// metrics that participate in MVP / Red Flag ranking, and which direction is "better"
+const PERFORMANCE_METRICS = {
+  csat: 'high', median_ttr: 'low', ces: 'high', sentiment: 'high', per_shift_solved: 'high', oncalls: 'high',
+};
+function ttrToMinutes(str) {
+  if (!str) return 0;
+  const h = /(\d+)h/.exec(str), m = /(\d+)m/.exec(str);
+  return (h ? parseInt(h[1]) * 60 : 0) + (m ? parseInt(m[1]) : 0);
+}
+function pctToNumber(str) { return parseFloat(String(str).replace('%', '')) || 0; }
+function sortValue(row, key, type) {
+  const v = row[key];
+  if (type === 'ttr') return ttrToMinutes(v);
+  if (type === 'pct') return pctToNumber(v);
+  if (type === 'number') return Number(v) || 0;
+  return String(v || '').toLowerCase();
+}
+function computeBadges(rows) {
+  const mvp = {}, flag = {};
+  for (const key of Object.keys(PERFORMANCE_METRICS)) {
+    const better = PERFORMANCE_METRICS[key];
+    const type = REPORT_COLUMNS.find(c => c.key === key).type;
+    const ranked = rows.map(r => ({ employee: r.employee, v: sortValue(r, key, type) }))
+      .sort((a, b) => better === 'high' ? b.v - a.v : a.v - b.v);
+    mvp[key] = new Set(ranked.slice(0, 5).map(r => r.employee));
+    flag[key] = new Set(ranked.slice(-5).map(r => r.employee));
+  }
+  return { mvp, flag };
+}
+function renderReportHead() {
+  document.getElementById('reportTableHeadRow').innerHTML = REPORT_COLUMNS.map(c => {
+    const arrow = reportSortKey === c.key ? `<span class="sort-arrow">${reportSortDir === 'desc' ? '▼' : '▲'}</span>` : '';
+    return `<th onclick="sortReportTable('${c.key}')">${c.label}${arrow}</th>`;
+  }).join('');
+}
+function renderReportRows(rows) {
+  const badges = currentReportBadges;
+  document.getElementById('reportTableBody').innerHTML = rows.map(r => {
+    const cell = (key, display) => {
+      let badge = '';
+      if (badges.mvp[key]?.has(r.employee)) badge = '<span class="cell-badge-mvp">MVP</span>';
+      else if (badges.flag[key]?.has(r.employee)) badge = '<span class="cell-badge-flag">Red Flag</span>';
+      return `<td>${display}${badge}</td>`;
+    };
+    return `<tr>
+      <td>${escapeHtml(r.employee)}</td><td>${r.vacation}</td><td>${r.pd_oncall}</td><td>${r.sick}</td><td>${r.public_holidays}</td>
+      <td>${dash(r.task_days)}</td><td>${escapeHtml(dash(r.task_description))}</td>${cell('oncalls', r.oncalls)}
+      <td>${r.convos}</td>${cell('csat', r.csat)}${cell('median_ttr', r.median_ttr)}${cell('ces', r.ces)}${cell('sentiment', r.sentiment)}
+      <td>${r.effective_working_days}</td>${cell('per_shift_solved', r.per_shift_solved)}
+    </tr>`;
+  }).join('');
+}
+let currentReportRows = [];
+let currentReportBadges = null;
+let reportSortKey = null;
+let reportSortDir = 'desc';
+function sortReportTable(key) {
+  reportSortDir = (reportSortKey === key && reportSortDir === 'desc') ? 'asc' : 'desc';
+  reportSortKey = key;
+  const type = REPORT_COLUMNS.find(c => c.key === key).type;
+  const sorted = [...currentReportRows].sort((a, b) => {
+    const av = sortValue(a, key, type), bv = sortValue(b, key, type);
+    if (av < bv) return reportSortDir === 'desc' ? 1 : -1;
+    if (av > bv) return reportSortDir === 'desc' ? -1 : 1;
+    return 0;
+  });
+  renderReportHead();
+  renderReportRows(sorted);
+}
+
 async function openReport(id) {
   const report = await api('GET', `/api/reports/${id}`);
   if (!report) return;
@@ -567,14 +658,12 @@ async function openReport(id) {
     <div class="summary-card"><div class="sc-label">${label}</div><div class="sc-value">${value}</div></div>
   `).join('');
 
-  document.getElementById('reportTableBody').innerHTML = report.data.rows.map(r => `
-    <tr>
-      <td>${r.employee}</td><td>${r.vacation}</td><td>${r.pd_oncall}</td><td>${r.sick}</td><td>${r.public_holidays}</td>
-      <td>${dash(r.task_days)}</td><td>${dash(r.task_description)}</td><td>${r.oncalls}</td>
-      <td>${r.convos}</td><td>${r.csat}</td><td>${r.median_ttr}</td><td>${r.ces}</td><td>${r.sentiment}</td>
-      <td>${r.effective_working_days}</td><td>${r.per_shift_solved}</td>
-    </tr>
-  `).join('');
+  currentReportRows = report.data.rows;
+  currentReportBadges = computeBadges(report.data.rows);
+  reportSortKey = null;
+  reportSortDir = 'desc';
+  renderReportHead();
+  renderReportRows(currentReportRows);
 
   const reviewsEl = document.getElementById('reportReviewsSection');
   const reviews = report.data.reviews;
